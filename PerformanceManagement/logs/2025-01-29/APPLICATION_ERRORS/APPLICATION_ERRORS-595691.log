@@ -1,0 +1,69 @@
+2025-01-29 00:00:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:00:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:26:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:26:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:30:38 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:30:38 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:36:47 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:36:47 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:41:06 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:41:06 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:42:52 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.4, repliedAddress: 999000"}
+
+
+2025-01-29 00:44:02 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:44:02 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:49:02 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:49:02 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:56:13 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:56:13 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:57:52 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:57:52 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 00:59:18 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 00:59:18 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-29 01:01:33 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-29 01:01:33 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+

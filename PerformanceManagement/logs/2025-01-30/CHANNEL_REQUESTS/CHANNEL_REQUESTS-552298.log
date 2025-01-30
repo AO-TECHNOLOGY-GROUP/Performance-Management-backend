@@ -1,0 +1,42 @@
+2025-01-30 08:33:19 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"SEND_OTP","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:37:01 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:37:59 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"894816","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:38:47 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"SEND_OTP","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:40:16 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SEND_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:41:57 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SEND_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:45:41 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SEND_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:50:12 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SEND_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:51:36 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SEND_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:52:38 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"VERIFY_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"721181","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 08:55:04 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"VERIFY_OTP","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","customerNumber":"108875","otp":"721181","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 09:00:37 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SUBMIT_TASK","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254702962780","Header":"test","Notes":"test test test","Longitude":"-211.7865","Latitude":"43.8765","EscalatedToUserUUID":"BE956B73-C830-485A-A474-CA66725DAC68","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 09:04:27 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SUBMIT_TASK","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254702962780","Header":"test","Notes":"test test test","Longitude":"-211.7865","Latitude":"43.8765","EscalatedToUserUUID":"BE956B73-C830-485A-A474-CA66725DAC68","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 09:45:33 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SUBMIT_TASK","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254702962780","Header":"test","Notes":"test test test","Longitude":"-211.7865","Latitude":"43.8765","EscalatedToUserUUID":"BE956B73-C830-485A-A474-CA66725DAC68","EscalatedToEmail":"junki.moturi@gmail.com","EscalatedToPhoneNumber":"254719448593","EscalatedToName":"Jun Moturi","Status":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+

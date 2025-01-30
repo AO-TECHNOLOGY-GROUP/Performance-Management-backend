@@ -1,0 +1,138 @@
+2025-01-28 11:38:50 ~ DFA | com.co.ke.main.EntryPoint | 201 | lambda$null$1() | Response to channel - {"responseCode":"999","responseDescription":"failed to process request","error_data":"No handlers for address VALIDATION"}
+
+
+2025-01-28 11:43:59 ~ DFA | com.co.ke.main.EntryPoint | 201 | lambda$null$1() | Response to channel - {"responseCode":"999","responseDescription":"failed to process request","error_data":"No handlers for address VALIDATION"}
+
+
+2025-01-28 11:44:57 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"901000 failed","error_data":"No handlers for address 901000"}
+
+
+2025-01-28 11:46:34 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"No handlers for address 999000"}
+
+
+2025-01-28 11:55:59 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"No handlers for address 999000"}
+
+
+2025-01-28 11:56:01 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"No handlers for address 999000"}
+
+
+2025-01-28 11:56:58 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"No handlers for address 999000"}
+
+
+2025-01-28 12:02:09 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.2, repliedAddress: 999000"}
+
+
+2025-01-28 12:02:27 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:02:27 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:08:55 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:08:55 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:09:45 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:09:45 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:14:16 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:14:16 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:33:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:33:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:42:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:42:22 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:46:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:46:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:49:29 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:49:29 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 12:53:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 12:53:56 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 13:02:31 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 13:02:31 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 13:07:31 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 13:07:31 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:30:48 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:30:48 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:32:08 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:32:08 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:43:41 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:43:41 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:44:00 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.7, repliedAddress: 999000"}
+
+
+2025-01-28 23:45:43 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.15, repliedAddress: 999000"}
+
+
+2025-01-28 23:46:12 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.18, repliedAddress: 999000"}
+
+
+2025-01-28 23:47:42 ~ DFA | com.co.ke.main.EntryPoint | 195 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"999000 failed","error_data":"Timed out after waiting 90000(ms) for a reply. address: __vertx.reply.21, repliedAddress: 999000"}
+
+
+2025-01-28 23:48:37 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:48:37 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:55:01 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:55:01 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+
+2025-01-28 23:58:45 ~ DFA | com.aogroup.za.adaptors.Integrator | 102 | requestToThirdParty() | Error - Connection refused: connect
+
+
+2025-01-28 23:58:45 ~ DFA | com.aogroup.za.adaptors.Integrator | 58 | sendToThirdParty() | Error - Failed to decode: null
+
+

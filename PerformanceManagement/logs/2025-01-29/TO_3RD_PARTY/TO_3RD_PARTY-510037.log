@@ -1,0 +1,33 @@
+2025-01-29 00:00:19 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 489674.","timestamp":"20250129000019"}}
+
+
+2025-01-29 00:26:20 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 544562.","timestamp":"20250129002620"}}
+
+
+2025-01-29 00:30:36 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 676888.","timestamp":"20250129003036"}}
+
+
+2025-01-29 00:36:45 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 115796.","timestamp":"20250129003645"}}
+
+
+2025-01-29 00:41:04 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 213306.","timestamp":"20250129004104"}}
+
+
+2025-01-29 00:44:00 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 843911.","timestamp":"20250129004400"}}
+
+
+2025-01-29 00:49:00 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 785958.","timestamp":"20250129004900"}}
+
+
+2025-01-29 00:56:11 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 628871.","timestamp":"20250129005611"}}
+
+
+2025-01-29 00:57:50 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 616395.","timestamp":"20250129005750"}}
+
+
+2025-01-29 00:59:16 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 281936.","timestamp":"20250129005916"}}
+
+
+2025-01-29 01:01:31 ~ DFA | com.aogroup.za.adaptors.Integrator | 43 | sendToThirdParty() | INTEGRATION_TO_3RD_PARTY: {"url":"http://127.0.0.1:7248/notification_pc","json":{"processingCode":"122000","phonenumber":"254717521854","msg":"Dear ISAAC MUNGAI, your One Time Password is 116323.","timestamp":"20250129010131"}}
+
+
