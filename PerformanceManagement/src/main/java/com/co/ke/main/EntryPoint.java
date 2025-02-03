@@ -1,6 +1,7 @@
 package com.co.ke.main;
 
 
+import com.aogroup.za.DashboardResults.dashboardResults;
 import com.aogroup.za.EmployeeTasks.employeeTasks;
 import com.aogroup.za.UserInteraction.UserInteraction;
 import com.aogroup.za.Objectives.objectives;
@@ -136,7 +137,7 @@ public class EntryPoint extends AbstractVerticle {
         vertx.deployVerticle(ESBRouter.class.getName(), options);
         vertx.deployVerticle(UserAuth.class.getName(), options);
         vertx.deployVerticle(UserInteraction.class.getName(), options);
-
+        vertx.deployVerticle(dashboardResults.class.getName(), options);
           }
 
     @Override

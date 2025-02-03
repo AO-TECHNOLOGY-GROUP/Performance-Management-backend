@@ -104,7 +104,7 @@ public class UserUtil {
         }
 
         String sql = "INSERT INTO users(branch,first_name,last_name,phone_number,email," +
-                "password,uuid,type,creator_id,status,created_at,isRO) VALUES(?,?,?,?,? ,?,NEWID(),?,?,'1',GETDATE(),?)";
+                "password,uuid,type,creator_id,status,created_at,isRO,channel) VALUES(?,?,?,?,? ,?,NEWID(),?,?,'1',GETDATE(),?,?)";
 
         String insertLoginValidation = "INSERT INTO login_validation([uuid],[password],[login_trials],[change_password],[status],[otp_verified],[otp_hash],[otp_expiry]) \n" +
                 "   VALUES(?,?,?,?,?,?,?,DATEADD(Minute,?,GETDATE()))";
@@ -129,6 +129,7 @@ public class UserUtil {
             preparedStatement.setString(7, userType);
             preparedStatement.setString(8, user);
             preparedStatement.setString(9, isRO);
+            preparedStatement.setString(10, channel);
             if (preparedStatement.executeUpdate() == 0) {
                 throw new SQLException("Failed to add user to USERS TABLE");
             }
@@ -179,6 +180,10 @@ public class UserUtil {
                     .put("emailRecipient", email)
                     .put("emailSubject", "REGISTRATION")
                     .put("emailBody", emailBody);
+            
+            request
+                    .put("phonenumber", phoneNumber)
+                    .put("msg", emailBody);
 
             request
                     .put("responseCode", SUCCESS_CODE)
@@ -188,7 +193,7 @@ public class UserUtil {
 
 
             connection.commit();
-
+            
         } catch (SQLException throwables) {
             request
                     .put("responseCode", ERROR_CODE)
@@ -503,7 +508,7 @@ public class UserUtil {
     public JsonObject fetchUsers(String column, String value) {
         JsonObject res = new JsonObject();
         String sql = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type]" +
                 " WHERE " + column + " = '" + value + "'  ORDER BY created_at DESC";
 
@@ -530,7 +535,8 @@ public class UserUtil {
                         .put("maker", resultSet.getString("creator_id"))
                         .put("status", resultSet.getString("status"))
                         .put("isRO", resultSet.getString("isRO"))
-                        .put("createdAt", resultSet.getString("created_at"));
+                        .put("createdAt", resultSet.getString("created_at"))
+                        .put("channel", resultSet.getString("channel"));
 
                 array.add(obj);
             }
@@ -557,7 +563,7 @@ public class UserUtil {
 
         // Construct the base SQL query
         StringBuilder sqlBuilder = new StringBuilder("SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type] "
                 + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId WHERE 1 = 1");
 
@@ -609,7 +615,8 @@ public class UserUtil {
                     .put("maker", resultSet.getString("creator_id"))
                     .put("status", resultSet.getString("status"))
                     .put("isRO", resultSet.getString("isRO"))
-                    .put("createdAt", resultSet.getString("created_at"));
+                    .put("createdAt", resultSet.getString("created_at"))
+                    .put("channel", resultSet.getString("channel"));
 
                 String userUUID = resultSet.getString("uuid");
                 JsonArray usersBranchesJsonArray = fetchUsersBranchesAsBranchesJsonArray("UserId", userUUID);
@@ -660,7 +667,7 @@ public class UserUtil {
     public JsonObject fetchUserDetails(String searchColumn, String searchWord) {
         JsonObject res = new JsonObject();
         String sql = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type] "
                 + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId"
                 + " WHERE " + searchColumn + " = ?";
@@ -688,7 +695,8 @@ public class UserUtil {
                         .put("maker", resultSet.getString("creator_id"))
                         .put("status", resultSet.getString("status"))
                         .put("isRO", resultSet.getString("isRO"))
-                        .put("createdAt", resultSet.getString("created_at"));
+                        .put("createdAt", resultSet.getString("created_at"))
+                        .put("channel", resultSet.getString("channel"));
 
                 String userUUID = resultSet.getString("uuid");
                 JsonArray usersBranchesJsonArray = fetchUsersBranchesAsBranchesJsonArray("UserId", userUUID);
@@ -727,7 +735,7 @@ public class UserUtil {
     public JsonArray fetchUsersBranchesDetails(String searchColumn, String searchWord) {
         JsonArray array = new JsonArray();
         String sql = "SELECT TOP (1000) ub.[Id],[UserId],[BranchId],ub.[CreatedDate],b.[Name] as BranchName," +
-                "u.first_name + ' ' + u.last_name AS UserFullName\n" +
+                "b.[Code] AS BranchCode, u.first_name + ' ' + u.last_name AS UserFullName\n" +
                 "  FROM [Performance_Management].[dbo].[usersBranches] ub LEFT JOIN Branches b ON b.Id = ub.BranchId " +
                 "LEFT JOIN users u ON u.uuid = ub.UserId  WHERE " + searchColumn + " = ? ORDER BY b.[Name] ASC";
 
@@ -747,6 +755,7 @@ public class UserUtil {
                         .put("branchId", resultSet.getString("BranchId"))
                         .put("userFullName", resultSet.getString("UserFullName"))
                         .put("branchName", resultSet.getString("BranchName"))
+                        .put("branchCode", resultSet.getString("BranchCode"))
                         .put("createdDate", resultSet.getString("CreatedDate"));
                 array.add(obj);
             }
@@ -947,6 +956,7 @@ public class UserUtil {
                 return request;
             }
             String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
+            String phoneNumber = userDetails.getString("phoneNumber");
             String branch = userDetails.getJsonArray("userBranches").getString(0);
             String role = userDetails.getString("type");
             String roleName = userDetails.getString("roleName");
@@ -956,7 +966,7 @@ public class UserUtil {
             if ( Integer.parseInt(role) == 2) {
                   
                 JsonObject adminDetails = fetchUserDetails("type", "4");
-                if (!userDetails.getBoolean("successIndicator")) {
+                if (!adminDetails.getBoolean("successIndicator")) {
                     request
                             .put("responseCode", ERROR_CODE)
                             .put("responseDescription", "Error! Unable to fetch user details");
@@ -1022,6 +1032,7 @@ public class UserUtil {
                     .put("roleName", roleName)
                     .put("changePassword", lv_changePassword)
                     .put("name", name)
+                    .put("phoneNumber", phoneNumber)
                     .put("rolePermission", fetchRolePermissionsArray("r.[id]", role))
                     .put("userBranches", userBranches);
         } else {
@@ -1043,9 +1054,11 @@ public class UserUtil {
     }
 
     public JsonObject forgotPassword(JsonObject request) {
-        String email;
+        Common common = new Common();
+        String email, channel;
         try {
             email = request.getString("email");
+            channel = request.getString("channel");
         } catch (Exception e) {
             //e.printStackTrace();
             request.clear();
@@ -1056,7 +1069,17 @@ public class UserUtil {
         }
         request.clear();
 
-        String password = generateRandomPassword(8);
+        String password = "";
+        
+        System.out.println("Channel - " + channel);
+        System.out.println("Channel true - " + common.generateNewPinRandomFour());
+        
+        if (channel.trim().equalsIgnoreCase("app")) {
+            password = common.generateNewPinRandomFour();
+        } else {
+            password = generateRandomPassword(8);
+        }
+        
         String hashPassword = new Common().generatedHashedPin(password, "A.B.", "12345678");
 
         JsonObject userDetails = fetchUserDetails("u.email", email);

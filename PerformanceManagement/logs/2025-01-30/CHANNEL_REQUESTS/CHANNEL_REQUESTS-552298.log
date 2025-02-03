@@ -40,3 +40,132 @@
 2025-01-30 09:45:33 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SUBMIT_TASK","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254702962780","Header":"test","Notes":"test test test","Longitude":"-211.7865","Latitude":"43.8765","EscalatedToUserUUID":"BE956B73-C830-485A-A474-CA66725DAC68","EscalatedToEmail":"junki.moturi@gmail.com","EscalatedToPhoneNumber":"254719448593","EscalatedToName":"Jun Moturi","Status":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
 
 
+2025-01-30 14:16:05 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:16:25 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"427762","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:29:59 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:30:36 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:32:42 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"NTZENjVGNkUtNzUxMS00QjMxLTg4RjUtRjIzQzlCOUQ0NzA3","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:32:54 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:33:11 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"712194","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:33:34 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:39:50 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:39:52 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:40:25 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 14:54:42 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:04:46 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:09:13 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:10:32 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","BranchManagerId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:43:25 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"CREATEOBJ","Name":["visiting already registered customers quarterly","ensuring debts are paid on time"],"Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:43:38 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHALLOBJ","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:44:06 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHSUBTASKBYOBJ","ObjectiveId":["5187CCA4-8D3D-4611-A3A0-33C5ECF29B4B","448C2063-562F-4341-987C-ABEA470062D5"],"token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 15:44:31 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 16:28:00 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"900000","firstName":"Uhuru","lastName":"Kenyatta","email":"uhuruko@gmail.com","phoneNumber":"254712346890","branches":["69BB5AF7-042F-4B4D-82E8-B60EB6A1D991"],"userType":"3","isRO":"0","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 16:38:03 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 16:38:30 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"342249","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 16:38:48 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"900000","firstName":"Uhuru","lastName":"Kenyatta","email":"uhuruko@gmail.com","phoneNumber":"254712346890","branches":["69BB5AF7-042F-4B4D-82E8-B60EB6A1D991"],"userType":"3","isRO":"0","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:22:42 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:53:37 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:55:24 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","Role":"3","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:55:38 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_ROS_BY_BRANCH_MANAGER","Role":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:57:07 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHSUBTASKBYROLE","Role":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 17:57:46 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHSUBTASKBYROLE","Role":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:01:10 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHSUBTASKBYROLE","Role":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:04:15 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHSUBTASKBYROLE","Role":"3","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:05:20 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"56D65F6E-7511-4B31-88F5-F23C9B9D4707","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:09:00 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"BE956B73-C830-485A-A474-CA66725DAC68","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:22:57 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"BE956B73-C830-485A-A474-CA66725DAC68","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 18:36:02 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCHEMPLOYEETASKBYUSERID","UserId":"BE956B73-C830-485A-A474-CA66725DAC68","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 19:09:51 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"902000","email":"junki.moturi@gmail.com","channel":"APP","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 19:10:36 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"902000","email":"junki.moturi@gmail.com","channel":"APP","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 19:13:02 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"902000","email":"junki.moturi@gmail.com","channel":"APP","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 19:14:13 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"902000","email":"junki.moturi@gmail.com","channel":"APP","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 20:46:14 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 20:48:46 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"901000","email":"isaacmungaik97@gmail.com","user_password":"Gikonyo25*","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 20:49:57 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"545306","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-30 20:50:24 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"SUBMIT_TASK","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254719448593","Header":"testing","Notes":"testing testing testing","Longitude":"-211.7865 Nakuru","Latitude":"43.8765 Nakuru","EscalatedToUserUUID":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","EscalatedToEmail":"isaacmungaik97@gmail.com","EscalatedToPhoneNumber":"254717521854","EscalatedToName":"Isaac Mungai","Status":"2","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+

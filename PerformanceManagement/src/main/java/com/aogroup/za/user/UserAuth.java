@@ -208,6 +208,15 @@ public class UserAuth extends AbstractVerticle {
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");
         }
+        
+        if (quickResponse.containsKey("msg")) {
+            JsonObject smsObject = new JsonObject();
+            smsObject
+                    .put("phonenumber", quickResponse.getString("phonenumber"))
+                    .put("msg", quickResponse.getString("msg"));
+            
+            eventBus.send("COMMUNICATION_ADAPTOR", smsObject);
+        }
         message.reply(quickResponse);
     }
 

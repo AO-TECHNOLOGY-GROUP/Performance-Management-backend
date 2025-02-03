@@ -43,7 +43,7 @@ public class subtasks extends AbstractVerticle{
         eventBus.consumer("FETCHSUBTASKBYOBJ", this::fetchSubtasksByObjectives);
         eventBus.consumer("FETCHALLSUBTASKS", this::fetchAllSubtasks);
         eventBus.consumer("UPDATESUBTASKS", this::updateSubtasks); 
-        
+        eventBus.consumer("FETCHSUBTASKBYROLE", this::fetchSubtasksByRole);
     }
     
     private void creatingSubtask(Message<JsonObject> message) {
@@ -206,7 +206,11 @@ public class subtasks extends AbstractVerticle{
         DBConnection dbConnection = new DBConnection();
         JsonArray result = new JsonArray();
 
-        String query = "SELECT * FROM [dbo].[Subtasks]";
+        String query = "SELECT S.*, r.name AS RoleName, o.Name AS ObjectiveName FROM [dbo].[Subtasks] S "
+                + "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId "
+                + "INNER JOIN [dbo].[roles] r ON o.Role = r.id";
+     
+        
         try (Connection connection = dbConnection.getConnection();
              PreparedStatement prFetchAll = connection.prepareStatement(query)) {
 
@@ -215,8 +219,10 @@ public class subtasks extends AbstractVerticle{
             while (rs.next()) {
                 JsonObject jo = new JsonObject()
                         .put("Id", rs.getString("Id"))
-                        .put("ObjectiveId", rs.getString("ObjectiveId"))
                         .put("Name", rs.getString("Name"))
+                        .put("RoleName", rs.getString("RoleName"))
+                        .put("ObjectiveId", rs.getString("ObjectiveId"))
+                        .put("ObjectiveName", rs.getString("ObjectiveName"))
                         .put("Frequency", rs.getString("Frequency"))
                         .put("Verification", String.valueOf(rs.getInt("Verification")))
                         .put("CreatedAt", rs.getString("CreatedAt"))
@@ -302,4 +308,60 @@ public class subtasks extends AbstractVerticle{
         message.reply(response);
     } 
     
+    private void fetchSubtasksByRole(Message<JsonObject> message){
+        DBConnection dbConnection = new DBConnection();
+        JsonObject response = new JsonObject();
+        
+        JsonObject requestBody = message.body();
+        String role = requestBody.getString("Role");
+
+        JsonArray result = new JsonArray();
+        
+        if (role == null || role.isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! Role is required.");
+            message.reply(response);
+            return;
+        }
+
+        String query = "SELECT s.* FROM [Performance_Management].[dbo].[Subtasks] s " +
+                           "JOIN [Performance_Management].[dbo].[Objectives] o ON s.ObjectiveId = o.Id " +
+                           "WHERE o.Role = ?";
+
+       try (Connection connection = dbConnection.getConnection();
+             PreparedStatement prFetch = connection.prepareStatement(query)) {
+
+            prFetch.setString(1, role);
+            ResultSet rs = prFetch.executeQuery();
+
+            while (rs.next()) {
+                JsonObject jo = new JsonObject()
+                       .put("Id", rs.getString("Id"))
+                       .put("ObjectiveId", rs.getString("ObjectiveId"))
+                       .put("Name", rs.getString("Name"))
+                       .put("Frequency", rs.getString("Frequency"))
+                       .put("Verification", rs.getString("Verification"))
+                       .put("CreatedAt", rs.getString("CreatedAt"))
+                       .put("UpdatedAt", rs.getString("UpdatedAt"));                                 
+                result.add(jo);
+                
+            }
+        } catch(Exception e) {
+            e.getMessage();
+        } finally {
+            dbConnection.closeConn();
+        }
+        
+        if (result.size() > 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Subtasks fetched successfully.")
+                    .put("data", result);
+        }else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to fetch Objectives.");
+        }
+        message.reply(response);
+    }
 }

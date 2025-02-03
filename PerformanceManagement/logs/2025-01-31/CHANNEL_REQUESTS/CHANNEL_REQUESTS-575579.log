@@ -1,0 +1,6 @@
+2025-01-31 10:29:31 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"901500","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","otp":"242260","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+
+2025-01-31 17:05:49 ~ DFA | com.co.ke.main.EntryPoint | 174 | lambda$null$2() | Channel Request  - {"username":"performance","password":"pm@ao2025","processingCode":"999000","serviceCode":"FETCH_CUSTOMER_HISTORY","EmployeeTaskId":"BC441A3B-65C2-465B-9064-EC277C2AFBFD","CustomerPhoneNumber":"254702962780","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","channel":"WEB","ip":"127.0.0.1","ip_address":"127.0.0.1"}
+
+

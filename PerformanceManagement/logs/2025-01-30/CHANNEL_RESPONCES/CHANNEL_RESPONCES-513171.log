@@ -34,3 +34,129 @@
 2025-01-30 09:45:34 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Task submitted and escalated successfully"}
 
 
+2025-01-30 14:16:06 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"json_token":"eyJhdWQiOiJEMkY5NTE2Ri0wRUYzLTQ5MkItOEUyRi1DQzI1OTJDMzA0NDkiLCJuYmYiOiIifQ==","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","responseCode":"000","responseDescription":"Success! User Authenticated"}
+
+
+2025-01-30 14:16:25 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! OTP Validated","escalation":{"name":"null null","uuid":null,"roleName":null,"phoneNumber":null,"email":null},"roleName":"BM","changePassword":"0","name":"Isaac Mungai","rolePermission":["create_users","manage_users","view_users"],"userBranches":[{"id":"7","userId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","branchId":"69BB5AF7-042F-4B4D-82E8-B60EB6A1D991","userFullName":"Isaac Mungai","branchName":"Head Office","createdDate":"2025-01-28 13:57:14.227"}],"userId":"1","user_uuid":"D2F9516F-0EF3-492B-8E2F-CC2592C30449"}
+
+
+2025-01-30 14:30:37 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Invalid column name 'Role'."}
+
+
+2025-01-30 14:32:42 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error! User has been deactivated "}
+
+
+2025-01-30 14:32:54 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"json_token":"eyJhdWQiOiJEMkY5NTE2Ri0wRUYzLTQ5MkItOEUyRi1DQzI1OTJDMzA0NDkiLCJuYmYiOiIifQ==","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","responseCode":"000","responseDescription":"Success! User Authenticated"}
+
+
+2025-01-30 14:33:12 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! OTP Validated","escalation":{"name":"null null","uuid":null,"roleName":null,"phoneNumber":null,"email":null},"roleName":"BM","changePassword":"0","name":"Isaac Mungai","rolePermission":["create_users","manage_users","view_users"],"userBranches":[{"id":"7","userId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","branchId":"69BB5AF7-042F-4B4D-82E8-B60EB6A1D991","userFullName":"Isaac Mungai","branchName":"Head Office","createdDate":"2025-01-28 13:57:14.227"}],"userId":"1","user_uuid":"D2F9516F-0EF3-492B-8E2F-CC2592C30449"}
+
+
+2025-01-30 14:33:34 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[]}
+
+
+2025-01-30 14:39:50 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Invalid column name 'Role'."}
+
+
+2025-01-30 14:39:52 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Invalid column name 'Role'."}
+
+
+2025-01-30 14:40:26 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Branch Manager not found or has no assigned branch"}
+
+
+2025-01-30 14:54:42 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Branch Manager not found or has no assigned branch"}
+
+
+2025-01-30 15:04:46 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Conversion failed when converting from a character string to uniqueidentifier."}
+
+
+2025-01-30 15:09:14 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Conversion failed when converting from a character string to uniqueidentifier."}
+
+
+2025-01-30 15:10:33 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","ROs":[{"UserId":"2","Name":"Jun Moturi","Email":"junki.moturi@gmail.com","PhoneNumber":"254719448593"},{"UserId":"3","Name":"Sharleen Ashley","Email":"sharshleynishti@gmail.com","PhoneNumber":"254745846509"}]}
+
+
+2025-01-30 15:43:25 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! Objective created successfully"}
+
+
+2025-01-30 15:43:38 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Objectives fetched successfully.","data":[{"Id":"F2E7D9CF-3632-4B81-8F5C-C01D6A930E79","Name":"working efficiently","Role":"3","PeriodStart":"2025-01-20","PeriodEnd":"2025-03-30","CreatedAt":"2025-01-28 17:37:36.207","UpdatedAt":"2025-01-28 17:37:36.207"},{"Id":"7C9E2ECC-C3D0-4576-8606-B5D2EA5311CC","Name":"visiting new customers weekly","Role":"1","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 17:40:16.74","UpdatedAt":"2025-01-28 17:40:16.74"},{"Id":"A019DD1C-4219-4CCC-8B19-701BA01B6315","Name":"ensuring registration of new organization chama members","Role":"1","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 17:40:16.74","UpdatedAt":"2025-01-28 19:03:27.98"},{"Id":"39FB9936-F31C-4C78-B1ED-63B627E00524","Name":"visiting already registered customers quarterly","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 17:41:34.613","UpdatedAt":"2025-01-28 17:41:34.613"},{"Id":"EFE1903D-00F2-4459-8E5E-E0C05DFC59E2","Name":"ensuring debts are paid on time","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 17:41:34.617","UpdatedAt":"2025-01-28 17:41:34.617"},{"Id":"1FDE8DEE-E47A-4CE6-BAA6-F5D3E6F9AA6E","Name":"visiting already registered customers quarterly","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 21:15:14.803","UpdatedAt":"2025-01-28 21:15:14.803"},{"Id":"19D9927B-1982-4A02-AC12-C4D4B804B8BE","Name":"ensuring debts are paid on time","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-28 21:15:14.807","UpdatedAt":"2025-01-28 21:15:14.807"},{"Id":"354E107C-228A-4E70-8971-A46E22EEF87A","Name":"Customer Engagement","Role":"3","PeriodStart":"2025-01-01","PeriodEnd":"2025-01-31","CreatedAt":"2025-01-28 21:42:06.73","UpdatedAt":"2025-01-28 21:42:06.73"},{"Id":"28A9603B-A407-427E-B8D9-327DB40E7F6B","Name":"visiting already registered customers quarterly","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-30 15:43:25.817","UpdatedAt":"2025-01-30 15:43:25.817"},{"Id":"891660EE-AA3E-4DB7-8045-21C0BDA8C4EF","Name":"ensuring debts are paid on time","Role":"2","PeriodStart":"2025-01-22","PeriodEnd":"2025-04-30","CreatedAt":"2025-01-30 15:43:25.817","UpdatedAt":"2025-01-30 15:43:25.817"}]}
+
+
+2025-01-30 15:44:06 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"No subtasks found for the given ObjectiveIds."}
+
+
+2025-01-30 15:44:31 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[]}
+
+
+2025-01-30 16:28:01 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error! Failed to register User"}
+
+
+2025-01-30 16:38:03 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"json_token":"eyJhdWQiOiJEMkY5NTE2Ri0wRUYzLTQ5MkItOEUyRi1DQzI1OTJDMzA0NDkiLCJuYmYiOiIifQ==","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","responseCode":"000","responseDescription":"Success! User Authenticated"}
+
+
+2025-01-30 16:38:30 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! OTP Validated","escalation":{"name":"null null","uuid":null,"roleName":null,"phoneNumber":null,"email":null},"roleName":"BM","changePassword":"0","name":"Isaac Mungai","rolePermission":["create_users","manage_users","view_users"],"userBranches":[{"id":"7","userId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","branchId":"69BB5AF7-042F-4B4D-82E8-B60EB6A1D991","userFullName":"Isaac Mungai","branchName":"Head Office","createdDate":"2025-01-28 13:57:14.227"}],"userId":"1","user_uuid":"D2F9516F-0EF3-492B-8E2F-CC2592C30449"}
+
+
+2025-01-30 16:38:48 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error! Failed to register User"}
+
+
+2025-01-30 17:22:42 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[]}
+
+
+2025-01-30 17:53:37 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[]}
+
+
+2025-01-30 17:55:24 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Branch Manager not found or has no assigned branch"}
+
+
+2025-01-30 17:55:38 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Branch Manager not found or has no assigned branch"}
+
+
+2025-01-30 17:57:08 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Failed to fetch Objectives."}
+
+
+2025-01-30 17:57:46 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Failed to fetch Objectives."}
+
+
+2025-01-30 18:01:10 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Failed to fetch Objectives."}
+
+
+2025-01-30 18:04:15 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Subtasks fetched successfully.","data":[{"Id":"6BAEB69C-15EC-463C-A026-C4E1F93220B5","ObjectiveId":"F2E7D9CF-3632-4B81-8F5C-C01D6A930E79","Name":"suubbtask1","Frequency":"Weekly","Verification":"0","CreatedAt":"2025-01-28 19:52:34.473","UpdatedAt":"2025-01-28 19:55:58.717"}]}
+
+
+2025-01-30 18:05:21 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[]}
+
+
+2025-01-30 18:09:00 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[{"ObjectiveName":"working efficiently","Subtasks":[{"SubtaskName":"suubbtask1","Target":3,"Progress":[{"TaskDate":"2025-01-29","ExpectedTarget":"10","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-05","ExpectedTarget":"20","AchievedTarget":"1","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-12","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-19","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-26","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-05","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-12","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-19","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-26","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"}]}]}]}
+
+
+2025-01-30 18:22:57 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[{"ObjectiveName":"working efficiently","Subtasks":[{"SubtaskName":"suubbtask1","SubtaskID":"6BAEB69C-15EC-463C-A026-C4E1F93220B5","Target":3,"Progress":[{"TaskDate":"2025-01-29","ExpectedTarget":"10","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-05","ExpectedTarget":"20","AchievedTarget":"1","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-12","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-19","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-02-26","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-05","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-12","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-19","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"},{"TaskDate":"2025-03-26","ExpectedTarget":"3","AchievedTarget":"0","Frequency":"Weekly","Verification":"0"}]}]}]}
+
+
+2025-01-30 18:36:02 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success","data":[{"ObjectiveName":"working efficiently","Subtasks":[{"SubtaskName":"suubbtask1","SubtaskID":"6BAEB69C-15EC-463C-A026-C4E1F93220B5","Target":3,"Frequency":"Weekly","Verification":"0","Progress":[{"TaskDate":"2025-01-29","ExpectedTarget":"10","AchievedTarget":"0"},{"TaskDate":"2025-02-05","ExpectedTarget":"20","AchievedTarget":"1"},{"TaskDate":"2025-02-12","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-02-19","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-02-26","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-03-05","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-03-12","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-03-19","ExpectedTarget":"3","AchievedTarget":"0"},{"TaskDate":"2025-03-26","ExpectedTarget":"3","AchievedTarget":"0"}]}]}]}
+
+
+2025-01-30 19:09:51 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! Password changed"}
+
+
+2025-01-30 19:10:37 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! Password changed"}
+
+
+2025-01-30 19:13:02 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! Password changed"}
+
+
+2025-01-30 19:14:13 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! Password changed"}
+
+
+2025-01-30 20:46:15 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"json_token":"eyJhdWQiOiJEMkY5NTE2Ri0wRUYzLTQ5MkItOEUyRi1DQzI1OTJDMzA0NDkiLCJuYmYiOiIifQ==","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","responseCode":"000","responseDescription":"Success! User Authenticated"}
+
+
+2025-01-30 20:48:47 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"json_token":"eyJhdWQiOiJEMkY5NTE2Ri0wRUYzLTQ5MkItOEUyRi1DQzI1OTJDMzA0NDkiLCJuYmYiOiIifQ==","token":"RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5","responseCode":"000","responseDescription":"Success! User Authenticated"}
+
+
+2025-01-30 20:49:57 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Success! OTP Validated","escalation":{"name":"null null","uuid":null,"roleName":null,"phoneNumber":null,"email":null},"roleName":"BM","changePassword":"0","name":"Isaac Mungai","rolePermission":["create_users","manage_users","view_users"],"userBranches":[{"id":"7","userId":"D2F9516F-0EF3-492B-8E2F-CC2592C30449","branchId":"69BB5AF7-042F-4B4D-82E8-B60EB6A1D991","userFullName":"Isaac Mungai","branchName":"Head Office","createdDate":"2025-01-28 13:57:14.227"}],"userId":"1","user_uuid":"D2F9516F-0EF3-492B-8E2F-CC2592C30449"}
+
+
+2025-01-30 20:50:24 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"000","responseDescription":"Task submitted and escalated successfully"}
+
+
