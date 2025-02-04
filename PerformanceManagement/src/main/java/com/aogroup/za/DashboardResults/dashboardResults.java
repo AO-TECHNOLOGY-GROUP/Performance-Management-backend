@@ -25,6 +25,7 @@ public class dashboardResults extends AbstractVerticle {
         
         // Registering the dashboard API endpoint
         eventBus.consumer("GET_DASHBOARD_PERFORMANCE", this::getPerformanceTargets);
+        eventBus.consumer("GET_BRANCH_PERFORMANCE", this::getBranchPerformance);
     }
 
     private void getPerformanceTargets(Message<JsonObject> message) {
@@ -106,10 +107,11 @@ public class dashboardResults extends AbstractVerticle {
             "    st.[QuarterlyExpectedTarget], " +
             "    st.[QuarterlyAchievedTarget] " +
             "FROM SubtaskTargets st " +
+            "WHERE St.[UserId] = ? " +
             "ORDER BY st.[ObjectiveId], st.[SubtasksId];";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
-            
+            ps.setString(1, userId);
             ResultSet rs = ps.executeQuery();
 
             JsonArray objectivesArray = new JsonArray();
@@ -184,4 +186,74 @@ public class dashboardResults extends AbstractVerticle {
 
         message.reply(response);
     }
+
+    private void getBranchPerformance(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
+
+        JsonObject requestBody = message.body();
+        String branchId = requestBody.getString("BranchId");
+
+        String query = "WITH RO_Performance AS (\n" +
+            "    SELECT \n" +
+            "        u.uuid, \n" +
+            "        et.SubtasksId, \n" +
+            "        SUM(COALESCE(pt.AchievedTarget, 0)) AS AchievedTarget, \n" +
+            "        SUM(COALESCE(et.Target, 0)) AS ExpectedTarget \n" +
+            "    FROM [Performance_Management].[dbo].[usersBranches] ub \n" +
+            "    JOIN [Performance_Management].[dbo].[users] u ON u.uuid = ub.UserId \n" +
+            "    JOIN [Performance_Management].[dbo].[EmployeeTasks] et ON u.uuid = et.UserId \n" +
+            "    LEFT JOIN [Performance_Management].[dbo].[ProgressiveTracking] pt ON pt.EmployeeTaskId = et.Id \n" +
+            "    WHERE ub.BranchId = ? \n" +
+            "      AND u.isRO = 1  \n" +
+            "    GROUP BY u.uuid, et.SubtasksId \n" +
+            "), \n" +
+            "Branch_Performance AS (\n" +
+            "    SELECT \n" +
+            "        SUM(AchievedTarget) AS TotalAchieved, \n" +
+            "        SUM(ExpectedTarget) AS TotalExpected \n" +
+            "    FROM RO_Performance\n" +
+            ") \n" +
+            "SELECT \n" +
+            "    bp.TotalAchieved, \n" +
+            "    bp.TotalExpected, \n" +
+            "    (CASE \n" +
+            "        WHEN COALESCE(bp.TotalExpected, 0) > 0 \n" +
+            "        THEN (CAST(bp.TotalAchieved AS DECIMAL(10,2)) / CAST(bp.TotalExpected AS DECIMAL(10,2))) * 100 \n" +
+            "        ELSE 0 \n" +
+            "    END) AS BranchPerformancePercentage \n" +
+            "FROM Branch_Performance bp;";
+
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, branchId);  // Set BranchId
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                double totalAchieved = rs.getDouble("TotalAchieved");
+                double totalExpected = rs.getDouble("TotalExpected");
+                double branchPerformance = rs.getDouble("BranchPerformancePercentage");
+
+                response.put("responseCode", "000")
+                        .put("responseDescription", "Branch performance fetched successfully")
+                        .put("averagePercentage", String.format("%.2f", branchPerformance));  // Format the percentage
+
+            } else {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "No data found for the provided BranchId");
+            }
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+
 }

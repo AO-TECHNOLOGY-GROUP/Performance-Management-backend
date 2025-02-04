@@ -425,8 +425,9 @@ public class employeeTasks extends AbstractVerticle{
             String branchQuery = "SELECT ub.BranchId " +
                                  "FROM users u " +
                                  "JOIN usersBranches ub ON u.uuid = ub.UserId " +
-                                 "WHERE u.uuid = ? AND u.type = 2"; 
-
+                                 "JOIN roles r ON u.type = r.id " +
+                                 "WHERE u.uuid = ? AND r.name = 'BM'"; 
+            
             String branchId = null;
             try (PreparedStatement psBranch = connection.prepareStatement(branchQuery)) {
                 psBranch.setString(1, branchManagerId);

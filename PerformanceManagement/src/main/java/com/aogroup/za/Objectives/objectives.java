@@ -104,9 +104,9 @@ public class objectives extends AbstractVerticle{
 
         JsonArray result = new JsonArray();
 
-        String query = "SELECT o.*, r.name AS RoleName FROM [Performance_Management].[dbo].[Objectives] O "
-                + "INNER JOIN [Performance_Management].[dbo].[roles] r"
-                + "ON o.Role = r.id";
+        String query = "SELECT o.*, r.name AS RoleName FROM [Performance_Management].[dbo].[Objectives] o "
+                + "INNER JOIN [Performance_Management].[dbo].[roles] r "
+                + "ON o.Role = r.id ";
         
         try {
              ResultSet allObjectives = dbConnection.query_all(query);
