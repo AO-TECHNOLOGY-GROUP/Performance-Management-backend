@@ -1,6 +1,0 @@
-2025-01-30 08:45:42 ~ DFA | com.aogroup.za.datasource.DBConnection | 92 | update_db() | DB Exception  - The INSERT statement conflicted with the FOREIGN KEY constraint "verification_codes_user_id_foreign". The conflict occurred in database "Performance_Management", table "dbo.users", column 'id'.
-
-
-2025-01-30 08:50:12 ~ DFA | com.aogroup.za.datasource.DBConnection | 92 | update_db() | DB Exception  - Cannot insert the value NULL into column 'deleted_at', table 'Performance_Management.dbo.verification_codes'; column does not allow nulls. INSERT fails.
-
-
