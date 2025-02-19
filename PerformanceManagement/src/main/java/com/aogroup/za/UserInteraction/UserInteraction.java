@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Random;
 import log.Logging;
 
@@ -40,10 +41,13 @@ public class UserInteraction extends AbstractVerticle{
         eventBus.consumer("VERIFY_OTP", this::verifyOTP);
         eventBus.consumer("SUBMIT_TASK", this::submitTask);
         eventBus.consumer("FETCHESCALATEDTASKS", this::fetchEscalatedTasks);
+        eventBus.consumer("FETCH_CUSTOMER_HISTORY", this::fetchCustomerInteractionHistory);
+        eventBus.consumer("FETCHUSERSPERROLE", this::fetchUsersByRole);
 
         
     }
     
+
     private void sendOTP(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
@@ -52,110 +56,156 @@ public class UserInteraction extends AbstractVerticle{
             message.fail(666, "Unauthenticated User");
             return;
         }
-        
-        DBConnection dbConnection = new DBConnection();
+
         JsonObject response = new JsonObject();
         String otp = new Common().generateRandom(6);
         String customerNumber = data.getString("customerNumber");
-        
-        // Fetch from customer details
-        String query = "SELECT * FROM customer_details_stub WHERE customer_number = '"+ customerNumber +"'";
-        
+
+        String query = "SELECT first_name, last_name, phone_number FROM [Dfa].[dbo].[customer_details_stub] WHERE customer_number = ?";
+
+        DBConnection dbConnection = new DBConnection();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
         try {
-            ResultSet rs = dbConnection.query_all(query);
-            
-            if (rs.next()){
+            conn = dbConnection.getConnection();
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, customerNumber);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
                 String phoneNumber = rs.getString("phone_number");
-                String name = rs.getString("first_name") + rs.getString("last_name");
-                
-                // update unused previous codes
-                String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = '"+ customerNumber +"'";
-                
-                int i = dbConnection.update_db(updateSql);
-                
-                String sql = "INSERT INTO verification_codes ([code],[phone_number],[intent],[customer_number])" +
-                " VALUES ('"+ otp +"','"+ phoneNumber +"','Customer Verification','"+ customerNumber +"')";
+                String name = rs.getString("first_name") + " " + rs.getString("last_name");
 
+                // Update unused previous codes
+                String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = ?";
+                try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                    updateStmt.setString(1, customerNumber);
+                    updateStmt.executeUpdate();
+                }
 
-                int j = dbConnection.update_db(sql);
+                // Insert new OTP
+                String insertSql = "INSERT INTO verification_codes ([code], [phone_number], [intent], [customer_number]) VALUES (?, ?, 'Customer Verification', ?)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                    insertStmt.setString(1, otp);
+                    insertStmt.setString(2, phoneNumber);
+                    insertStmt.setString(3, customerNumber);
+                    insertStmt.executeUpdate();
+                }
 
-                String otpSMS = "Dear "+name.toUpperCase()+", your One Time Password is "+otp+".";
-
-                JsonObject messageObject = new JsonObject();
-
-                messageObject
+                // Send SMS
+                String otpSMS = "Dear " + name.toUpperCase() + ", your One Time Password is " + otp + ".";
+                JsonObject messageObject = new JsonObject()
                         .put("phonenumber", phoneNumber)
                         .put("msg", otpSMS);
 
-                eventBus.send("COMMUNICATION_ADAPTOR",messageObject);
+                eventBus.send("COMMUNICATION_ADAPTOR", messageObject);
 
-                response
-                        .put("responseCode", "000")
+                response.put("responseCode", "000")
                         .put("responseDescription", "OTP sent successfully.");
-                
+            } else {
+                response.put("responseCode", "404")
+                        .put("responseDescription", "Customer not found.");
             }
         } catch (Exception e) {
-            e.getMessage();
-            response
-                        .put("responseCode", "999")
-                        .put("responseDescription", "OTP failed to send.");
+            e.printStackTrace();
+            response.put("responseCode", "999")
+                    .put("responseDescription", "OTP failed to send.");
         } finally {
-            dbConnection.closeConn();
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+                dbConnection.closeConn();  // Close connection properly
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
-        
         message.reply(response);
     }
 
     private void verifyOTP(Message<JsonObject> message) {
         JsonObject data = message.body();
-        DBConnection dbConnection = new DBConnection();
         MultiMap headers = message.headers();
-        
-        String customerNumber = data.getString("customerNumber");
-        String otp = data.getString("otp");
-        JsonObject response = new JsonObject();
 
         if (headers.isEmpty()) {
             message.fail(666, "Unauthenticated User");
             return;
         }
 
-        // Fetch from verification codes
-        String query = "SELECT * FROM verification_codes WHERE customer_number = '"+ customerNumber +"' AND [status] = 0";
-        
-        try {
-            ResultSet rs = dbConnection.query_all(query);
-            
-            if (rs.next()){
-                String dbOtp = rs.getString("code");
-                
-                if (dbOtp.equals(otp)) {
-                    // update unused previous codes
-                    String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = '"+ customerNumber +"'";
+        String customerNumber = data.getString("customerNumber");
+        String otp = data.getString("otp");
+        JsonObject response = new JsonObject();
 
-                    int i = dbConnection.update_db(updateSql);
-                    
-                    response
-                            .put("responseCode", "000")
-                            .put("responseDescription", "OTP verified successfully.");
+        String query = "SELECT code, phone_number FROM verification_codes WHERE customer_number = ? AND [status] = 0";
+
+        DBConnection dbConnection = new DBConnection();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = dbConnection.getConnection();
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, customerNumber);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String dbOtp = rs.getString("code");
+                String phoneNumber = rs.getString("phone_number");
+
+                if (dbOtp.equals(otp)) {
+                    // Update OTP status
+                    String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = ?";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                        updateStmt.setString(1, customerNumber);
+                        updateStmt.executeUpdate();
+                    }
+
+                    response.put("responseCode", "000")
+                            .put("responseDescription", "OTP verified successfully.")
+                            .put("phoneNumber", phoneNumber);
                 } else {
-                    response
-                            .put("responseCode", "999")
-                            .put("responseDescription", "OTP failed to verify.");
+                    response.put("responseCode", "401")
+                            .put("responseDescription", "Invalid OTP.");
                 }
+            } else {
+                response.put("responseCode", "404")
+                        .put("responseDescription", "No OTP found.");
             }
         } catch (Exception e) {
-            e.getMessage();
+            e.printStackTrace();
+            response.put("responseCode", "999")
+                    .put("responseDescription", "OTP verification failed.");
         } finally {
-            dbConnection.closeConn();
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+                dbConnection.closeConn();  // Close connection properly
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        
+
         message.reply(response);
     }
 
     private void submitTask(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
+        
+        MultiMap headers = message.headers();
+        if (headers.isEmpty()){
+            //System.out.println("empty Header");
+            message.fail(666,"Unauthenticated User");
+            return;
+        }
+        String user_uuid = headers.get("user_uuid");
+        String user_branch_id = headers.get("user_branch_id");
+        String user_type = headers.get("user_role_id");
+        
         DBConnection dbConnection = new DBConnection();
         Connection connection = dbConnection.getConnection();
 
@@ -166,13 +216,30 @@ public class UserInteraction extends AbstractVerticle{
         String notes = requestBody.getString("Notes");
         String longitude = requestBody.getString("Longitude");
         String latitude = requestBody.getString("Latitude");
-        String escalatedToUserUUID = requestBody.getString("EscalatedToUserUUID", null); 
-        String escalatedToEmail = requestBody.getString("EscalatedToEmail", null); 
-        String escalatedToPhoneNumber = requestBody.getString("EscalatedToPhoneNumber", null); 
+        String escalatedToUserUUID = requestBody.getString("EscalatedToUserUUID", null);
+        String escalatedToEmail = requestBody.getString("EscalatedToEmail", null);
+        String escalatedToPhoneNumber = requestBody.getString("EscalatedToPhoneNumber", null);
         String escalatedToName = requestBody.getString("EscalatedToName", null);
         int status = Integer.parseInt(requestBody.getString("Status"));
 
         try {
+            // Fetch the expected target from EmployeeTasks table
+            String fetchTargetSQL = "SELECT Target FROM EmployeeTasks WHERE Id = ?";
+            int expectedTarget = 0;
+
+            try (PreparedStatement psFetchTarget = connection.prepareStatement(fetchTargetSQL)) {
+                psFetchTarget.setString(1, employeeTaskId);
+                ResultSet rsTarget = psFetchTarget.executeQuery();
+                if (rsTarget.next()) {
+                    expectedTarget = rsTarget.getInt("Target");
+                } else {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error: EmployeeTaskId not found.");
+                    message.reply(response);
+                    return;
+                }
+            }
+
             // Insert new task submission
             String insertSubmissionSQL = "INSERT INTO UserTaskSubmissions " +
                     "(EmployeeTaskId, TaskDate, CustomerPhoneNumber, Header, Notes, Longitude, Latitude, Status, Escalation, CreatedAt, UpdatedAt) " +
@@ -186,14 +253,14 @@ public class UserInteraction extends AbstractVerticle{
                 psInsert.setString(5, longitude);
                 psInsert.setString(6, latitude);
                 psInsert.setInt(7, status);
-                psInsert.setString(8, escalatedToUserUUID); // Null if not escalated
+                psInsert.setString(8, escalatedToUserUUID);
                 psInsert.executeUpdate();
             }
 
             // Update AchievedTarget in ProgressiveTracking
             String updateProgressSQL = "UPDATE ProgressiveTracking " +
-                "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
-                "WHERE EmployeeTaskId = ? AND TaskDate = CAST(GETDATE() AS DATE)";
+                    "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
+                    "WHERE EmployeeTaskId = ? AND TaskDate = CAST(GETDATE() AS DATE)";
 
             try (PreparedStatement psUpdate = connection.prepareStatement(updateProgressSQL)) {
                 psUpdate.setString(1, employeeTaskId);
@@ -204,11 +271,10 @@ public class UserInteraction extends AbstractVerticle{
                     String closestFutureSQL = "SELECT TOP 1 Id FROM ProgressiveTracking " +
                             "WHERE TaskDate > CAST(GETDATE() AS DATE) AND EmployeeTaskId = ? ORDER BY TaskDate ASC";
 
-                    try (PreparedStatement psClosest = connection.prepareStatement(closestFutureSQL);) {
+                    try (PreparedStatement psClosest = connection.prepareStatement(closestFutureSQL)) {
                         psClosest.setString(1, employeeTaskId);
-                        
                         ResultSet rs = psClosest.executeQuery();
-                        
+
                         if (rs.next()) {
                             String closestTaskId = rs.getString("Id");
 
@@ -230,34 +296,154 @@ public class UserInteraction extends AbstractVerticle{
                 }
             }
 
-            // If escalated, send email and SMS notification using event bus
-            if (status == 2) {
-                
-                if (escalatedToEmail != null) {
-                    JsonObject emailPayload = new JsonObject();
-                    emailPayload
-                    .put("emailRecipient", escalatedToEmail)
-                    .put("emailSubject", "ESCALATION - " + header)
-                    .put("emailBody", notes);
-                    
-                    DeliveryOptions deliveryOptions = new DeliveryOptions()
-                    .addHeader("emailRecipient", emailPayload.getString("emailRecipient"))
-                    .addHeader("emailSubject", emailPayload.getString("emailSubject"))
-                    .addHeader("emailBody", emailPayload.getString("emailBody"));
-                    eventBus.send("SEND_EMAIL",emailPayload,deliveryOptions);
-                }
+            // Fetch Role Name based on Status
+            String fetchRoleSQL = "SELECT name FROM roles WHERE id = ?";
+            String roleName = null;
 
-                if (escalatedToPhoneNumber != null) {
-                    JsonObject smsPayload = new JsonObject()
-                            .put("phonenumber", escalatedToPhoneNumber)
-                            .put("msg", "Dear "+ escalatedToName +" you have received an escalation email. Kindly take action.");
-                    eventBus.send("COMMUNICATION_ADAPTOR", smsPayload);
+            try (PreparedStatement psFetchRole = connection.prepareStatement(fetchRoleSQL)) {
+                psFetchRole.setInt(1, Integer.parseInt(user_type));
+                ResultSet rsRole = psFetchRole.executeQuery();
+                if (rsRole.next()) {
+                    roleName = rsRole.getString("name");
+                } else {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error: Role ID not found.");
+                    message.reply(response);
+                    return;
                 }
             }
 
-            response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted" + (status == 2 ? " and escalated" : "") + " successfully");
+            // Handle escalation logic based on role
+            if ("RO".equals(roleName)) {
+                // Check if the RO is escalating to themselves
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If RO is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    // If RO escalates to their BM, we need to get the BM's details.
+                    String fetchBMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'BM' AND ub.BranchId = ?";
 
+                    try (PreparedStatement psFetchBM = connection.prepareStatement(fetchBMDetailsSQL)) {
+                        psFetchBM.setString(1, user_branch_id);  // fetch BM based on RO's BranchId
+                        ResultSet rsBM = psFetchBM.executeQuery();
+                        if (rsBM.next()) {
+                            String bmEmail = rsBM.getString("email");
+                            String bmPhoneNumber = rsBM.getString("phone_number");
+                            String bmName = rsBM.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(bmEmail, bmPhoneNumber, bmName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: Branch Manager not found for the given RO.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("RO".equals(roleName) ? " and escalated" : "") + " successfully");
+                
+            } else if ("BM".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If BM is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchAMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'AM' AND ub.BranchId = ?";
+
+                    try (PreparedStatement psFetchAM = connection.prepareStatement(fetchAMDetailsSQL)) {
+                        psFetchAM.setString(1, user_branch_id);  
+                        ResultSet rsAM = psFetchAM.executeQuery();
+                        if (rsAM.next()) {
+                            String amEmail = rsAM.getString("email");
+                            String amPhoneNumber = rsAM.getString("phone_number");
+                            String amName = rsAM.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(amEmail, amPhoneNumber, amName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: AM not found for the given Branch Manager.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("BM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }else if ("AM".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If AM is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchChiefDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'Chief' AND ub.BranchId = ?";
+
+                    try (PreparedStatement psFetchChief = connection.prepareStatement(fetchChiefDetailsSQL)) {
+                        psFetchChief.setString(1, user_branch_id);  
+                        ResultSet rsChief = psFetchChief.executeQuery();
+                        if (rsChief.next()) {
+                            String chiefEmail = rsChief.getString("email");
+                            String chiefPhoneNumber = rsChief.getString("phone_number");
+                            String chiefName = rsChief.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(chiefEmail, chiefPhoneNumber, chiefName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: Chief not found for the given Area Manager.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("AM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }else if ("Chief".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If RO is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchCEODetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'CEO' AND ub.BranchId = ?";
+
+                    try (PreparedStatement psFetchCEO = connection.prepareStatement(fetchCEODetailsSQL)) {
+                        psFetchCEO.setString(1, user_branch_id);  
+                        ResultSet rsCEO = psFetchCEO.executeQuery();
+                        if (rsCEO.next()) {
+                            String CEOEmail = rsCEO.getString("email");
+                            String CEOPhoneNumber = rsCEO.getString("phone_number");
+                            String CEOName = rsCEO.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(CEOEmail, CEOPhoneNumber, CEOName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: CEO not found for the given Chief.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("Chief".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }
         } catch (Exception e) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());
@@ -267,6 +453,33 @@ public class UserInteraction extends AbstractVerticle{
         }
 
         message.reply(response);
+    }
+
+    private void sendEscalationNotification(String recipientEmail, String recipientPhoneNumber, String recipientName, String header, String notes) {
+        // Send Email Notification
+        if (recipientEmail != null) {
+            JsonObject emailPayload = new JsonObject();
+            emailPayload
+                .put("emailRecipient", recipientEmail)
+                .put("emailSubject", "ESCALATION - " + header)
+                .put("emailBody", notes);
+
+            DeliveryOptions deliveryOptions = new DeliveryOptions()
+                .addHeader("emailRecipient", emailPayload.getString("emailRecipient"))
+                .addHeader("emailSubject", emailPayload.getString("emailSubject"))
+                .addHeader("emailBody", emailPayload.getString("emailBody"));
+
+            eventBus.send("SEND_EMAIL", emailPayload, deliveryOptions);
+        }
+
+        // Send SMS Notification
+        if (recipientPhoneNumber != null) {
+            JsonObject smsPayload = new JsonObject()
+                .put("phonenumber", recipientPhoneNumber)
+                .put("msg", "Dear " + recipientName + ", you have received an escalation email. Kindly take action.");
+
+            eventBus.send("COMMUNICATION_ADAPTOR", smsPayload);
+        }
     }
 
     private void fetchEscalatedTasks(Message<JsonObject> message) {
@@ -283,11 +496,35 @@ public class UserInteraction extends AbstractVerticle{
         String userUUID = headers.get("user_uuid");
 
         try {
+            // Step 1: Get Role Name of the User from the `users` table
+            String roleQuery = "SELECT r.name AS role_name FROM users u " +
+                               "JOIN roles r ON u.type = r.id " + // `type` is the role_id
+                               "WHERE u.uuid = ?";
+
+            String userRole = null;
+
+            try (PreparedStatement psRole = connection.prepareStatement(roleQuery)) {
+                psRole.setString(1, userUUID);
+                ResultSet rsRole = psRole.executeQuery();
+
+                if (rsRole.next()) {
+                    userRole = rsRole.getString("role_name");
+                } else {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error: User role not found.");
+                    message.reply(response);
+                    return;
+                }
+            }
+
+            // Step 2: Fetch Escalated Tasks Based on Role Name (BM or RO)
             String query = "SELECT Id, EmployeeTaskId, TaskDate, CustomerPhoneNumber, Header, Notes, Longitude, Latitude, Status, Escalation, CreatedAt, UpdatedAt " +
-                           "FROM UserTaskSubmissions WHERE Status = 2 AND Escalation = ?";
+                           "FROM UserTaskSubmissions " +
+                           "WHERE Escalation = ? AND Status IN (SELECT id FROM roles WHERE name = ?)";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setString(1, userUUID);
+                ps.setString(1, userUUID); // Escalation is stored as user_uuid
+                ps.setString(2, userRole); // Use role name instead of hardcoded status
                 ResultSet rs = ps.executeQuery();
 
                 JsonArray tasks = new JsonArray();
@@ -323,70 +560,128 @@ public class UserInteraction extends AbstractVerticle{
         message.reply(response);
     }
 
-//    private void sendEscalationEmail(Message<JsonObject> message) {
-//        JsonObject data = message.body();
-//
-//        String email = data.getString("email");
-//        String taskId = data.getString("taskId");
-//        String header = data.getString("header");
-//        String notes = data.getString("notes");
-//        String customerPhone = data.getString("customerPhone");
-//        String longitude = data.getString("longitude");
-//        String latitude = data.getString("latitude");
-//
-//        if (email == null) {
-//            message.fail(400, "Email is required");
-//            return;
-//        }
-//
-//        String emailBody = "Dear recipient,\n\n" +
-//                "A task has been escalated to you. Here are the details:\n\n" +
-//                "Task ID: " + taskId + "\n" +
-//                "Header: " + header + "\n" +
-//                "Notes: " + notes + "\n" +
-//                "Customer Phone: " + customerPhone + "\n" +
-//                "Location: (" + latitude + ", " + longitude + ")\n\n" +
-//                "Please review the task and take appropriate action.\n\n" +
-//                "Best regards,\nPerformance Management System";
-//
-//        JsonObject emailPayload = new JsonObject()
-//                .put("to", email)
-//                .put("subject", "Task Escalation Notification")
-//                .put("body", emailBody);
-//
-//        eventBus.send("SEND_EMAIL", emailPayload);
-//
-//        JsonObject response = new JsonObject()
-//                .put("responseCode", "000")
-//                .put("responseDescription", "Escalation email sent successfully");
-//
-//        message.reply(response);
-//    }
-//
-//    private void sendEscalationSMS(Message<JsonObject> message) {
-//        JsonObject data = message.body();
-//        String phoneNumber = data.getString("phoneNumber");
-//
-//        if (phoneNumber == null) {
-//            message.fail(400, "Phone number is required");
-//            return;
-//        }
-//
-//        String smsMessage = "You have received an email for escalation.";
-//
-//        JsonObject smsPayload = new JsonObject()
-//                .put("recipient", phoneNumber)
-//                .put("message", smsMessage);
-//
-//        eventBus.send("SEND_SMS", smsPayload);
-//
-//        JsonObject response = new JsonObject()
-//                .put("responseCode", "000")
-//                .put("responseDescription", "Escalation SMS sent successfully");
-//
-//        message.reply(response);
-//    }
+    private void fetchCustomerInteractionHistory(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
 
+        JsonObject requestBody = message.body();
+        String customerPhoneNumber = requestBody.getString("CustomerPhoneNumber");
+
+        if (customerPhoneNumber == null || customerPhoneNumber.isEmpty()) {
+            message.fail(400, "Customer phone number is required");
+            return;
+        }
+
+        try {
+            String query = "SELECT uts.Id, uts.EmployeeTaskId, uts.TaskDate, uts.CustomerPhoneNumber, uts.Header, uts.Notes, " +
+                          "uts.Longitude, uts.Latitude, uts.Status, uts.CreatedAt, uts.UpdatedAt, " +
+                           "u.first_name, u.last_name, u.email " +
+                           "FROM UserTaskSubmissions uts " +
+                           "JOIN EmployeeTasks et ON et.Id = uts.EmployeeTaskId " +
+                           "JOIN users u ON u.uuid = et.UserId " +
+                           "WHERE uts.CustomerPhoneNumber = ? " +
+                           "ORDER BY uts.TaskDate DESC";
+
+            try (PreparedStatement ps = connection.prepareStatement(query)) {
+                ps.setString(1, customerPhoneNumber);
+                ResultSet rs = ps.executeQuery();
+
+                JsonArray history = new JsonArray();
+                while (rs.next()) {
+                    JsonObject record = new JsonObject()
+                            .put("Id", rs.getString("Id"))
+                            .put("EmployeeTaskId", rs.getString("EmployeeTaskId"))
+                            .put("TaskDate", rs.getString("TaskDate"))
+                            .put("CustomerPhoneNumber", rs.getString("CustomerPhoneNumber"))
+                            .put("Header", rs.getString("Header"))
+                            .put("Notes", rs.getString("Notes"))
+                            .put("Longitude", rs.getString("Longitude"))
+                            .put("Latitude", rs.getString("Latitude"))
+                            .put("Status", rs.getInt("Status"))
+                            .put("CreatedAt", rs.getString("CreatedAt"))
+                            .put("UpdatedAt", rs.getString("UpdatedAt"))
+                            .put("VisitedBy", rs.getString("first_name") + " " + rs.getString("last_name"))
+                            .put("EmployeeEmail", rs.getString("email"));
+                    history.add(record);
+                }
+
+                response.put("responseCode", "000")
+                        .put("responseDescription", "Customer interaction history retrieved successfully")
+                        .put("history", history);
+            }
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+    
+    private void fetchUsersByRole(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
+
+        JsonObject requestBody = message.body();
+        String roleName = requestBody.getString("RoleName");
+
+        try {
+            // Validate input
+            if (roleName == null || roleName.isEmpty()) {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Role name is required");
+                message.reply(response);
+                return;
+            }
+
+            // Fetch users by role name
+            String fetchUsersQuery = "SELECT u.id AS UserId, " +
+                                     "u.first_name + ' ' + u.last_name AS Name, " +
+                                     "u.email AS Email, " +
+                                     "u.uuid AS UUID, " +
+                                     "u.phone_number AS PhoneNumber, " +
+                                     "u.branch AS Branch " + 
+                                     "FROM users u " +
+                                     "JOIN roles r ON u.type = r.id " +  // Join with roles table
+                                     "WHERE r.name = ?";  // Use role name instead of role ID
+
+            JsonArray userList = new JsonArray();
+            try (PreparedStatement psUsers = connection.prepareStatement(fetchUsersQuery)) {
+                psUsers.setString(1, roleName);
+                ResultSet rs = psUsers.executeQuery();
+                while (rs.next()) {
+                    JsonObject userData = new JsonObject()
+                            .put("UserId", rs.getString("UserId"))
+                            .put("Name", rs.getString("Name"))
+                            .put("UUID", rs.getString("UUID"))
+                            .put("Email", rs.getString("Email"))
+                            .put("PhoneNumber", rs.getString("PhoneNumber"))
+                            .put("Branch", rs.getString("Branch"));
+                    userList.add(userData);
+                }
+            }
+
+            // Debugging: Check number of users retrieved
+            System.out.println("Total users found for role " + roleName + ": " + userList.size());
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success")
+                    .put("Users", userList);
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn(); // Ensures connection is properly closed
+        }
+
+        message.reply(response);
+    }
 
 }
 

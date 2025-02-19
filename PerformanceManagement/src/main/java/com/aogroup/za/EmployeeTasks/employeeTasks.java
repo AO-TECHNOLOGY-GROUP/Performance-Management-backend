@@ -45,8 +45,8 @@ public class employeeTasks extends AbstractVerticle{
         eventBus.consumer("FETCHEMPLOYEETASKBYUSERID", this::fetchUserTaskById);
         eventBus.consumer("UPDATETASKASSIGNED", this::updateTaskAssigned); 
         eventBus.consumer("UPDATEPROGRESSIVETRACKING", this::updateProgressiveTracking);
-        eventBus.consumer("SUBMITTASKS", this::submitTask);
-
+        eventBus.consumer("FETCH_ROS_BY_BRANCH_MANAGER", this::fetchROsByBranchManager);
+        eventBus.consumer("FETCH_USER_SUBTASKS_WITH_TARGETS", this::fetchUserSubtasksWithTargets);
     }
     
     private void assigningTargets(Message<JsonObject> message) {
@@ -62,6 +62,26 @@ public class employeeTasks extends AbstractVerticle{
         try {
             connection.setAutoCommit(false);
 
+            // Check if the user already has a task assigned for any of the subtasks
+            for (int i = 0; i < userTargets.size(); i++) {
+                JsonObject subtaskData = userTargets.getJsonObject(i);
+                String subtaskId = subtaskData.getString("SubtasksId");
+
+                String checkExistingTaskSQL = "SELECT COUNT(*) FROM EmployeeTasks WHERE UserId = ? AND SubtasksId = ?";
+                try (PreparedStatement psCheckExisting = connection.prepareStatement(checkExistingTaskSQL)) {
+                    psCheckExisting.setString(1, userId);
+                    psCheckExisting.setString(2, subtaskId);
+                    ResultSet rsCheck = psCheckExisting.executeQuery();
+                    if (rsCheck.next() && rsCheck.getInt(1) > 0) {
+                        response.put("responseCode", "999")
+                                .put("responseDescription", "Error: User already has targets assigned for this subtask.");
+                        message.reply(response);
+                        return; // Stop further execution as the error was encountered
+                    }
+                }
+            }
+
+            // Continue assigning targets if no conflicts
             for (int i = 0; i < userTargets.size(); i++) {
                 JsonObject subtaskData = userTargets.getJsonObject(i);
                 String subtaskId = subtaskData.getString("SubtasksId");
@@ -74,7 +94,9 @@ public class employeeTasks extends AbstractVerticle{
 
                 String frequency = "Weekly"; 
                 int numPeriods = 1;
-                int frequencydays = 1;
+                int frequencydays = 0;
+                LocalDate startDate = null;
+                LocalDate endDate = null;
 
                 try (PreparedStatement psFetch = connection.prepareStatement(query)) {
                     psFetch.setString(1, subtaskId);
@@ -82,17 +104,23 @@ public class employeeTasks extends AbstractVerticle{
                     if (rs.next()) {
                         frequency = rs.getString("Frequency"); 
 
-                        switch (frequency) {
-                            case "Weekly":
+                        switch (frequency.toLowerCase()) {
+                            case "weekly":
                                 frequencydays = 7;
                                 break;
-                            case "Monthly":
+                            case "monthly":
                                 frequencydays = 30;
+                                break;
+                            case "quarterly":
+                                frequencydays = 90;
+                                break;
+                            case "daily":
+                                frequencydays = 1;
                                 break;
                         }
 
-                        LocalDate startDate = rs.getDate("PeriodStart").toLocalDate();
-                        LocalDate endDate = rs.getDate("PeriodEnd").toLocalDate();
+                        startDate = rs.getDate("PeriodStart").toLocalDate();
+                        endDate = rs.getDate("PeriodEnd").toLocalDate();
                         numPeriods = (int) ChronoUnit.DAYS.between(startDate, endDate) / frequencydays;
                     }
                 }
@@ -119,7 +147,7 @@ public class employeeTasks extends AbstractVerticle{
                 String insertProgressSQL = "INSERT INTO ProgressiveTracking (Id, EmployeeTaskId, TaskDate, ExpectedTarget, AchievedTarget, CreatedAt, UpdatedAt) " +
                                            "VALUES (NEWID(), ?, ?, ?, 0, GETDATE(), GETDATE())";
 
-                LocalDate trackingDate = LocalDate.now();
+                LocalDate trackingDate = startDate;
                 for (int p = 0; p < numPeriods; p++) {
                     try (PreparedStatement psInsertProgress = connection.prepareStatement(insertProgressSQL)) {
                         psInsertProgress.setString(1, employeeTaskId);
@@ -149,7 +177,7 @@ public class employeeTasks extends AbstractVerticle{
         }
         message.reply(response);
     }
-    
+
     private void fetchUserTaskById(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         DBConnection dbConnection = new DBConnection();
@@ -159,17 +187,18 @@ public class employeeTasks extends AbstractVerticle{
         String userId = requestBody.getString("UserId");
 
         String query = "SELECT o.Name AS ObjectiveName, " +
+                       "       e.Id AS SubtaskID, " +  // <-- Added Subtask ID
                        "       s.Name AS SubtaskName, " +
-                       "       s.Frequency," +
-                       "       s.Verification," +
+                       "       s.Frequency, " +
+                       "       s.Verification, " +
                        "       e.Target, " +
                        "       p.TaskDate, " +
                        "       p.ExpectedTarget, " +
                        "       p.AchievedTarget " +
                        "FROM EmployeeTasks e " +
-                       "JOIN Subtasks s ON e.SubtasksId = s.Id " +
-                       "JOIN Objectives o ON s.ObjectiveId = o.Id " +
-                       "LEFT JOIN ProgressiveTracking p ON e.Id = p.EmployeeTaskId " +
+                       "INNER JOIN Subtasks s ON e.SubtasksId = s.Id " +
+                       "INNER JOIN Objectives o ON s.ObjectiveId = o.Id " +
+                       "INNER JOIN ProgressiveTracking p ON e.Id = p.EmployeeTaskId " +
                        "WHERE e.UserId = ? " +
                        "ORDER BY o.Name, s.Name, p.TaskDate";
 
@@ -181,11 +210,12 @@ public class employeeTasks extends AbstractVerticle{
 
             while (rs.next()) {
                 String objectiveName = rs.getString("ObjectiveName");
+                String subtaskId = rs.getString("SubtaskID");  // <-- Extract SubtaskID
                 String subtaskName = rs.getString("SubtaskName");
                 String frequency = rs.getString("Frequency");
                 int verification = rs.getInt("Verification");
                 int target = rs.getInt("Target");
-                LocalDate taskDate = rs.getDate("TaskDate").toLocalDate();
+                String taskDate = !rs.getString("TaskDate").isEmpty() ? rs.getString("TaskDate") : null;
                 int expected = rs.getInt("ExpectedTarget");
                 int achieved = rs.getInt("AchievedTarget");
 
@@ -206,18 +236,20 @@ public class employeeTasks extends AbstractVerticle{
                 } else {
                     subtaskData = new JsonObject()
                         .put("SubtaskName", subtaskName)
+                        .put("SubtaskID", subtaskId)  // <-- Added SubtaskID to JSON response
                         .put("Target", target)
+                        .put("Frequency", frequency)
+                        .put("Verification", String.valueOf(verification))
                         .put("Progress", new JsonArray());
                     subtasksArray.add(subtaskData);
                 }
 
                 JsonArray progressArray = subtaskData.getJsonArray("Progress");
                 progressArray.add(new JsonObject()
-                    .put("TaskDate", taskDate.toString())
+                    .put("TaskDate", taskDate)
                     .put("ExpectedTarget", String.valueOf(expected))
-                    .put("AchievedTarget", String.valueOf(achieved))
-                    .put("Frequency", frequency)
-                    .put("Verification", String.valueOf(verification)));
+                    .put("AchievedTarget", String.valueOf(achieved)));
+                    
 
                 groupedResults.put(objectiveName, objectiveData);
             }
@@ -232,6 +264,7 @@ public class employeeTasks extends AbstractVerticle{
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
+            
         } finally {
             dbConnection.closeConn();
         }
@@ -378,67 +411,130 @@ public class employeeTasks extends AbstractVerticle{
 
         message.reply(response);
     }
-    
-    private void submitTask(Message<JsonObject> message) {
+          
+    private void fetchROsByBranchManager(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         DBConnection dbConnection = new DBConnection();
         Connection connection = dbConnection.getConnection();
 
         JsonObject requestBody = message.body();
-        String employeeTaskId = requestBody.getString("EmployeeTaskId");
-        String progressiveTrackingId = requestBody.getString("ProgressiveTrackingId");
-        String header = requestBody.getString("Header");
-        String notes = requestBody.getString("Notes");
-        double longitude = requestBody.getDouble("Longitude");
-        double latitude = requestBody.getDouble("Latitude");
+        String branchManagerId = requestBody.getString("BranchManagerId");
 
         try {
-
-            // Insert new submission
-            String insertSubmissionSQL = "INSERT INTO UserTaskSubmissions (EmployeeTaskId, ProgressiveTrackingId, TaskDate, Header, Notes, Longitude, Latitude, CreatedAt, UpdatedAt) " +
-                                         "VALUES (?, ?, GETDATE(), ?, ?, ?, ?, GETDATE(), GETDATE())";
-
-            try (PreparedStatement psInsert = connection.prepareStatement(insertSubmissionSQL)) {
-                psInsert.setString(1, employeeTaskId);
-                psInsert.setString(2, progressiveTrackingId);
-                psInsert.setString(3, header);
-                psInsert.setString(4, notes);
-                psInsert.setDouble(5, longitude);
-                psInsert.setDouble(6, latitude);
-                psInsert.executeUpdate();
-            }
-
-            // Update AchievedTarget in ProgressiveTracking
-            String updateProgressSQL = "UPDATE ProgressiveTracking " +
-                                       "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
-                                       "WHERE Id = ?";
-
-            try (PreparedStatement psUpdate = connection.prepareStatement(updateProgressSQL)) {
-                psUpdate.setString(1, progressiveTrackingId);
-                int rowsUpdated = psUpdate.executeUpdate();
-
-                if (rowsUpdated == 0) {
-                    response.put("responseCode", "999").put("responseDescription", "Failed to update AchievedTarget");
-                    message.reply(response);
-                    return;
+            // Fetch BranchId for the Branch Manager
+            String branchQuery = "SELECT ub.BranchId " +
+                                 "FROM users u " +
+                                 "JOIN usersBranches ub ON u.uuid = ub.UserId " +
+                                 "JOIN roles r ON u.type = r.id " +
+                                 "WHERE u.uuid = ? AND r.name = 'BM'"; 
+            
+            String branchId = null;
+            try (PreparedStatement psBranch = connection.prepareStatement(branchQuery)) {
+                psBranch.setString(1, branchManagerId);
+                ResultSet rs = psBranch.executeQuery();
+                if (rs.next()) {
+                    branchId = rs.getString("BranchId");
                 }
             }
 
+            // Debugging statement: Check retrieved BranchId
+            System.out.println("Fetched BranchId: " + branchId);
+
+            // If no branch is found, return an error
+            if (branchId == null) {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Branch Manager not found or has no assigned branch");
+                message.reply(response);
+                return;
+            }
+
+            // Fetch ROs from the same branch
+            String fetchROsQuery = "SELECT u.id AS UserId, u.first_name + ' ' + u.last_name AS Name, " +
+                                   "u.email AS Email, u.uuid AS UUID, u.phone_number AS PhoneNumber " +
+                                   "FROM users u " +
+                                   "JOIN usersBranches ub ON u.uuid = ub.UserId " +
+                                   "WHERE ub.BranchId = ? AND u.isRO = 1";
+            
+
+            JsonArray roList = new JsonArray();
+            try (PreparedStatement psROs = connection.prepareStatement(fetchROsQuery)) {
+                psROs.setString(1, branchId);
+                ResultSet rs = psROs.executeQuery();
+                while (rs.next()) {
+                    JsonObject roData = new JsonObject()
+                            .put("UserId", rs.getString("UserId"))
+                            .put("Name", rs.getString("Name"))
+                            .put("uuid", rs.getString("UUID"))
+                            .put("Email", rs.getString("Email"))
+                            .put("PhoneNumber", rs.getString("PhoneNumber"));
+                    roList.add(roData);
+                }
+            }
+
+            // Debugging statement: Check number of ROs retrieved
+            System.out.println("Total ROs found: " + roList.size());
 
             response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted and progress updated successfully");
+                    .put("responseDescription", "Success")
+                    .put("ROs", roList);
 
         } catch (Exception e) {
-            try {
-
-            response.put("responseCode", "999").put("responseDescription", "Error: " + e.getMessage());
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
-            } finally {
-                dbConnection.closeConn();
-            }
-            message.reply(response);
+        } finally {
+            dbConnection.closeConn(); // Ensures connection is properly closed
         }
 
+        message.reply(response);
     }
-      
+
+    private void fetchUserSubtasksWithTargets(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
+
+        JsonObject requestBody = message.body();
+        String userId = requestBody.getString("UserId");
+
+        String query = "SELECT o.Name AS ObjectiveName, " +
+                       "       s.Id AS SubtaskID, " +
+                       "       s.Name AS SubtaskName, " +
+                       "       e.Target AS Target " +
+                       "FROM EmployeeTasks e " +
+                       "INNER JOIN Subtasks s ON e.SubtasksId = s.Id " +
+                       "INNER JOIN Objectives o ON s.ObjectiveId = o.Id " +
+                       "WHERE e.UserId = ? " +
+                       "ORDER BY o.Name, s.Name";
+
+        try (PreparedStatement psFetch = connection.prepareStatement(query)) {
+            psFetch.setString(1, userId);
+            ResultSet rs = psFetch.executeQuery();
+
+            JsonArray subtasksArray = new JsonArray();
+
+            while (rs.next()) {
+                JsonObject subtaskData = new JsonObject()
+                    .put("ObjectiveName", rs.getString("ObjectiveName"))
+                    .put("SubtaskID", rs.getString("SubtaskID"))
+                    .put("SubtaskName", rs.getString("SubtaskName"))
+                    .put("Target", rs.getInt("Target"));
+
+                subtasksArray.add(subtaskData);
+            }
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success")
+                    .put("data", subtasksArray);
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+
 }

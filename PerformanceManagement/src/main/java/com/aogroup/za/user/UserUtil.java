@@ -104,7 +104,7 @@ public class UserUtil {
         }
 
         String sql = "INSERT INTO users(branch,first_name,last_name,phone_number,email," +
-                "password,uuid,type,creator_id,status,created_at,isRO) VALUES(?,?,?,?,? ,?,NEWID(),?,?,'1',GETDATE(),?)";
+                "password,uuid,type,creator_id,status,created_at,isRO,channel) VALUES(?,?,?,?,? ,?,NEWID(),?,?,'1',GETDATE(),?,?)";
 
         String insertLoginValidation = "INSERT INTO login_validation([uuid],[password],[login_trials],[change_password],[status],[otp_verified],[otp_hash],[otp_expiry]) \n" +
                 "   VALUES(?,?,?,?,?,?,?,DATEADD(Minute,?,GETDATE()))";
@@ -129,6 +129,7 @@ public class UserUtil {
             preparedStatement.setString(7, userType);
             preparedStatement.setString(8, user);
             preparedStatement.setString(9, isRO);
+            preparedStatement.setString(10, channel);
             if (preparedStatement.executeUpdate() == 0) {
                 throw new SQLException("Failed to add user to USERS TABLE");
             }
@@ -179,6 +180,10 @@ public class UserUtil {
                     .put("emailRecipient", email)
                     .put("emailSubject", "REGISTRATION")
                     .put("emailBody", emailBody);
+            
+            request
+                    .put("phonenumber", phoneNumber)
+                    .put("msg", emailBody);
 
             request
                     .put("responseCode", SUCCESS_CODE)
@@ -188,7 +193,7 @@ public class UserUtil {
 
 
             connection.commit();
-
+            
         } catch (SQLException throwables) {
             request
                     .put("responseCode", ERROR_CODE)
@@ -503,7 +508,7 @@ public class UserUtil {
     public JsonObject fetchUsers(String column, String value) {
         JsonObject res = new JsonObject();
         String sql = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type]" +
                 " WHERE " + column + " = '" + value + "'  ORDER BY created_at DESC";
 
@@ -530,7 +535,8 @@ public class UserUtil {
                         .put("maker", resultSet.getString("creator_id"))
                         .put("status", resultSet.getString("status"))
                         .put("isRO", resultSet.getString("isRO"))
-                        .put("createdAt", resultSet.getString("created_at"));
+                        .put("createdAt", resultSet.getString("created_at"))
+                        .put("channel", resultSet.getString("channel"));
 
                 array.add(obj);
             }
@@ -557,7 +563,7 @@ public class UserUtil {
 
         // Construct the base SQL query
         StringBuilder sqlBuilder = new StringBuilder("SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type] "
                 + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId WHERE 1 = 1");
 
@@ -609,7 +615,8 @@ public class UserUtil {
                     .put("maker", resultSet.getString("creator_id"))
                     .put("status", resultSet.getString("status"))
                     .put("isRO", resultSet.getString("isRO"))
-                    .put("createdAt", resultSet.getString("created_at"));
+                    .put("createdAt", resultSet.getString("created_at"))
+                    .put("channel", resultSet.getString("channel"));
 
                 String userUUID = resultSet.getString("uuid");
                 JsonArray usersBranchesJsonArray = fetchUsersBranchesAsBranchesJsonArray("UserId", userUUID);
@@ -660,7 +667,7 @@ public class UserUtil {
     public JsonObject fetchUserDetails(String searchColumn, String searchWord) {
         JsonObject res = new JsonObject();
         String sql = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,r.[name] AS RoleName FROM users u\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
                 "  LEFT JOIN roles r ON r.id = u.[type] "
                 + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId"
                 + " WHERE " + searchColumn + " = ?";
@@ -688,7 +695,8 @@ public class UserUtil {
                         .put("maker", resultSet.getString("creator_id"))
                         .put("status", resultSet.getString("status"))
                         .put("isRO", resultSet.getString("isRO"))
-                        .put("createdAt", resultSet.getString("created_at"));
+                        .put("createdAt", resultSet.getString("created_at"))
+                        .put("channel", resultSet.getString("channel"));
 
                 String userUUID = resultSet.getString("uuid");
                 JsonArray usersBranchesJsonArray = fetchUsersBranchesAsBranchesJsonArray("UserId", userUUID);
@@ -727,7 +735,7 @@ public class UserUtil {
     public JsonArray fetchUsersBranchesDetails(String searchColumn, String searchWord) {
         JsonArray array = new JsonArray();
         String sql = "SELECT TOP (1000) ub.[Id],[UserId],[BranchId],ub.[CreatedDate],b.[Name] as BranchName," +
-                "u.first_name + ' ' + u.last_name AS UserFullName\n" +
+                "b.[Code] AS BranchCode, u.first_name + ' ' + u.last_name AS UserFullName\n" +
                 "  FROM [Performance_Management].[dbo].[usersBranches] ub LEFT JOIN Branches b ON b.Id = ub.BranchId " +
                 "LEFT JOIN users u ON u.uuid = ub.UserId  WHERE " + searchColumn + " = ? ORDER BY b.[Name] ASC";
 
@@ -747,6 +755,7 @@ public class UserUtil {
                         .put("branchId", resultSet.getString("BranchId"))
                         .put("userFullName", resultSet.getString("UserFullName"))
                         .put("branchName", resultSet.getString("BranchName"))
+                        .put("branchCode", resultSet.getString("BranchCode"))
                         .put("createdDate", resultSet.getString("CreatedDate"));
                 array.add(obj);
             }
@@ -907,33 +916,37 @@ public class UserUtil {
         dbConnection.closeConn();
         return request;
     }
-
+    
     public JsonObject otpVerification(JsonObject request) {
-        String otp = request.getString("otp");
-        String user_uuid = request.getString("user_uuid");
-        request.clear();
+    String otp = request.getString("otp");
+    String user_uuid = request.getString("user_uuid");
+    request.clear();
 
-        String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
+    String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
 
-        JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
-        if (!loginValidationDetails.getBoolean("successIndicator")) {
-            return request
-                    .put("responseCode", ERROR_CODE)
-                    .put("responseDescription", "Error! Failed to fetch login details");
-        }
-        String lv_id = loginValidationDetails.getString("id");
-        String lv_otpHash = loginValidationDetails.getString("otpHash");
-        String lv_changePassword = loginValidationDetails.getString("changePassword");
+    JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
+    if (!loginValidationDetails.getBoolean("successIndicator")) {
+        return request
+                .put("responseCode", ERROR_CODE)
+                .put("responseDescription", "Error! Failed to fetch login details");
+    }
+    String lv_id = loginValidationDetails.getString("id");
+    String lv_otpHash = loginValidationDetails.getString("otpHash");
+    String lv_changePassword = loginValidationDetails.getString("changePassword");
 
-        if (!hashedOTP.equals(lv_otpHash)) {
-            return request
-                    .put("responseCode", ERROR_CODE)
-                    .put("responseDescription", "Error! OTP is invalid");
-        }
+    if (!hashedOTP.equals(lv_otpHash)) {
+        return request
+                .put("responseCode", ERROR_CODE)
+                .put("responseDescription", "Error! OTP is invalid");
+    }
 
-        String sql = "UPDATE login_validation SET otp_verified = '1',reference = '" + otp + "',updated_at = GETDATE() WHERE id = " + lv_id + "";
-        DBConnection dbConnection = new DBConnection();
-        int i = dbConnection.update_db(sql);
+    String sql = "UPDATE login_validation SET otp_verified = '1', reference = ?, updated_at = GETDATE() WHERE id = ?";
+    DBConnection dbConnection = new DBConnection();
+    try (PreparedStatement preparedStatement = dbConnection.getConnection().prepareStatement(sql)) {
+        preparedStatement.setString(1, otp);
+        preparedStatement.setString(2, lv_id);
+        int i = preparedStatement.executeUpdate();
+        
         if (i == 1) {
             request
                     .put("responseCode", SUCCESS_CODE)
@@ -941,97 +954,204 @@ public class UserUtil {
 
             JsonObject userDetails = fetchUserDetails("uuid", user_uuid);
             if (!userDetails.getBoolean("successIndicator")) {
-                request
+                return request
                         .put("responseCode", ERROR_CODE)
                         .put("responseDescription", "Error! Unable to fetch user details");
-                return request;
             }
-            String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
-            String branch = userDetails.getJsonArray("userBranches").getString(0);
-            String role = userDetails.getString("type");
-            String roleName = userDetails.getString("roleName");
-            
-            JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
-            System.out.println("role - " + role);
-            if ( Integer.parseInt(role) == 2) {
-                  
-                JsonObject adminDetails = fetchUserDetails("type", "4");
-                if (!userDetails.getBoolean("successIndicator")) {
-                    request
-                            .put("responseCode", ERROR_CODE)
-                            .put("responseDescription", "Error! Unable to fetch user details");
-                    return request;
-                }
-                
-                String adminname = adminDetails.getString("firstName") + " " + adminDetails.getString("lastName"); 
-                String adminuuid = adminDetails.getString("uuid");
-                String adminrole = adminDetails.getString("type");
-                String adminroleName = adminDetails.getString("roleName");
-                String adminphoneNumber = adminDetails.getString("phoneNumber");
-                String adminemail = adminDetails.getString("email");
 
-                JsonObject adminStore = new JsonObject();
-                adminStore
-                        .put("name",adminname)
-                        .put("uuid",adminuuid)
-                        .put("roleName",adminroleName)
-                        .put("phoneNumber",adminphoneNumber)
-                        .put("email",adminemail);
-                
-                
-                request
-                        .put("escalation",adminStore);
-              
-            } else if(Integer.parseInt(role) == 3) {
+            // Get user details
+            String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
+            String email = userDetails.getString("email");
+            String phoneNumber = userDetails.getString("phoneNumber");
+            String branch = userDetails.getJsonArray("userBranches").getString(0);
+            String roleName = userDetails.getString("roleName");
+            JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
+
+            // Determine the next escalation role
+            String nextRole = getNextEscalationRole(roleName);
+            if (nextRole != null) {
                 Map<String, Object> searchCriteria = new HashMap<>();
                 searchCriteria.put("ub.BranchId", branch);
-                searchCriteria.put("type", 2);
+                searchCriteria.put("r.name", nextRole);
 
-                JsonObject BMDetails = fetchUserDetails(searchCriteria);
-                System.out.println("details - " + BMDetails);
-                  
-//                JsonObject BMDetails = fetchUserDetails("branch = '" +branch+ "' and [type]", "2");
-                if (!userDetails.getBoolean("successIndicator")) {
-                    request
-                            .put("responseCode", ERROR_CODE)
-                            .put("responseDescription", "Error! Unable to fetch user details");
-                    return request;
+                JsonObject escalatedUserDetails = fetchUserDetails(searchCriteria);
+                if (escalatedUserDetails.getBoolean("successIndicator")) {
+                    JsonObject escalationDetails = new JsonObject();
+                    escalationDetails
+                            .put("name", escalatedUserDetails.getString("firstName") + " " + escalatedUserDetails.getString("lastName"))
+                            .put("uuid", escalatedUserDetails.getString("uuid"))
+                            .put("roleName", escalatedUserDetails.getString("roleName"))
+                            .put("phoneNumber", escalatedUserDetails.getString("phoneNumber"))
+                            .put("email", escalatedUserDetails.getString("email"));
+
+                    request.put("escalation", escalationDetails);
                 }
-                
-                String bmname = BMDetails.getString("firstName") + " " + BMDetails.getString("lastName"); 
-                String bmuuid = BMDetails.getString("uuid");
-                String bmrole = BMDetails.getString("type");
-                String bmroleName = BMDetails.getString("roleName");
-                String bmphoneNumber = BMDetails.getString("phoneNumber");
-                String bmemail = BMDetails.getString("email");
-
-                JsonObject bmStore = new JsonObject();
-                bmStore
-                        .put("name",bmname)
-                        .put("uuid",bmuuid)
-                        .put("roleName",bmroleName)
-                        .put("phoneNumber",bmphoneNumber)
-                        .put("email",bmemail);
-                
-                request
-                        .put("escalation",bmStore);
             }
-             
-            
+
             request
                     .put("roleName", roleName)
                     .put("changePassword", lv_changePassword)
                     .put("name", name)
-                    .put("rolePermission", fetchRolePermissionsArray("r.[id]", role))
+                    .put("email", email)
+                    .put("phoneNumber", phoneNumber)
+                    .put("rolePermission", fetchRolePermissionsArray("r.name", roleName))
                     .put("userBranches", userBranches);
         } else {
             request
                     .put("responseCode", ERROR_CODE)
                     .put("responseDescription", "ERROR! OTP not updated");
         }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return request
+                .put("responseCode", ERROR_CODE)
+                .put("responseDescription", "Database error: " + e.getMessage());
+    } finally {
         dbConnection.closeConn();
-        return request;
     }
+
+    return request;
+}
+
+    public String getNextEscalationRole(String roleName) {
+        Map<String, String> escalationMap = new HashMap<>();
+        escalationMap.put("RO", "BM");     // Relationship Officer → Branch Manager
+        escalationMap.put("BM", "AM");     // Branch Manager → Assistant Manager
+        escalationMap.put("AM", "Chief");  // Assistant Manager → Chief
+        escalationMap.put("Chief", "CEO"); // Chief → CEO
+
+        return escalationMap.get(roleName); // Returns next role, or null if not found
+    }
+
+
+//    public JsonObject otpVerification(JsonObject request) {
+//        String otp = request.getString("otp");
+//        String user_uuid = request.getString("user_uuid");
+//        request.clear();
+//
+//        String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
+//
+//        JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
+//        if (!loginValidationDetails.getBoolean("successIndicator")) {
+//            return request
+//                    .put("responseCode", ERROR_CODE)
+//                    .put("responseDescription", "Error! Failed to fetch login details");
+//        }
+//        String lv_id = loginValidationDetails.getString("id");
+//        String lv_otpHash = loginValidationDetails.getString("otpHash");
+//        String lv_changePassword = loginValidationDetails.getString("changePassword");
+//
+//        if (!hashedOTP.equals(lv_otpHash)) {
+//            return request
+//                    .put("responseCode", ERROR_CODE)
+//                    .put("responseDescription", "Error! OTP is invalid");
+//        }
+//
+//        String sql = "UPDATE login_validation SET otp_verified = '1',reference = '" + otp + "',updated_at = GETDATE() WHERE id = " + lv_id + "";
+//        DBConnection dbConnection = new DBConnection();
+//        int i = dbConnection.update_db(sql);
+//        if (i == 1) {
+//            request
+//                    .put("responseCode", SUCCESS_CODE)
+//                    .put("responseDescription", "Success! OTP Validated");
+//
+//            JsonObject userDetails = fetchUserDetails("uuid", user_uuid);
+//            if (!userDetails.getBoolean("successIndicator")) {
+//                request
+//                        .put("responseCode", ERROR_CODE)
+//                        .put("responseDescription", "Error! Unable to fetch user details");
+//                return request;
+//            }
+//            String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
+//            String email = userDetails.getString("email");
+//            String phoneNumber = userDetails.getString("phoneNumber");
+//            String branch = userDetails.getJsonArray("userBranches").getString(0);
+//            String role = userDetails.getString("type");
+//            String roleName = userDetails.getString("roleName");
+//            
+//            JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
+//            System.out.println("role - " + role);
+//            if ( Integer.parseInt(role) == 2) {
+//                  
+//                JsonObject adminDetails = fetchUserDetails("type", "4");
+//                if (!adminDetails.getBoolean("successIndicator")) {
+//                    request
+//                            .put("responseCode", ERROR_CODE)
+//                            .put("responseDescription", "Error! Unable to fetch user details");
+//                    return request;
+//                }
+//                
+//                String adminname = adminDetails.getString("firstName") + " " + adminDetails.getString("lastName"); 
+//                String adminuuid = adminDetails.getString("uuid");
+//                String adminrole = adminDetails.getString("type");
+//                String adminroleName = adminDetails.getString("roleName");
+//                String adminphoneNumber = adminDetails.getString("phoneNumber");
+//                String adminemail = adminDetails.getString("email");
+//
+//                JsonObject adminStore = new JsonObject();
+//                adminStore
+//                        .put("name",adminname)
+//                        .put("uuid",adminuuid)
+//                        .put("roleName",adminroleName)
+//                        .put("phoneNumber",adminphoneNumber)
+//                        .put("email",adminemail);
+//                
+//                
+//                request
+//                        .put("escalation",adminStore);
+//              
+//            } else if(Integer.parseInt(role) == 3) {
+//                Map<String, Object> searchCriteria = new HashMap<>();
+//                searchCriteria.put("ub.BranchId", branch);
+//                searchCriteria.put("type", 2);
+//
+//                JsonObject BMDetails = fetchUserDetails(searchCriteria);
+//                System.out.println("details - " + BMDetails);
+//                  
+////                JsonObject BMDetails = fetchUserDetails("branch = '" +branch+ "' and [type]", "2");
+//                if (!userDetails.getBoolean("successIndicator")) {
+//                    request
+//                            .put("responseCode", ERROR_CODE)
+//                            .put("responseDescription", "Error! Unable to fetch user details");
+//                    return request;
+//                }
+//                
+//                String bmname = BMDetails.getString("firstName") + " " + BMDetails.getString("lastName"); 
+//                String bmuuid = BMDetails.getString("uuid");
+//                String bmrole = BMDetails.getString("type");
+//                String bmroleName = BMDetails.getString("roleName");
+//                String bmphoneNumber = BMDetails.getString("phoneNumber");
+//                String bmemail = BMDetails.getString("email");
+//
+//                JsonObject bmStore = new JsonObject();
+//                bmStore
+//                        .put("name",bmname)
+//                        .put("uuid",bmuuid)
+//                        .put("roleName",bmroleName)
+//                        .put("phoneNumber",bmphoneNumber)
+//                        .put("email",bmemail);
+//                
+//                request
+//                        .put("escalation",bmStore);
+//            }
+//             
+//            
+//            request
+//                    .put("roleName", roleName)
+//                    .put("changePassword", lv_changePassword)
+//                    .put("name", name)
+//                    .put("email", email)
+//                    .put("phoneNumber", phoneNumber)
+//                    .put("rolePermission", fetchRolePermissionsArray("r.[id]", role))
+//                    .put("userBranches", userBranches);
+//        } else {
+//            request
+//                    .put("responseCode", ERROR_CODE)
+//                    .put("responseDescription", "ERROR! OTP not updated");
+//        }
+//        dbConnection.closeConn();
+//        return request;
+//    }
     
     public JsonObject logout(JsonObject request) {
         request.clear();
@@ -1043,9 +1163,11 @@ public class UserUtil {
     }
 
     public JsonObject forgotPassword(JsonObject request) {
-        String email;
+        Common common = new Common();
+        String email, channel;
         try {
             email = request.getString("email");
+            channel = request.getString("channel");
         } catch (Exception e) {
             //e.printStackTrace();
             request.clear();
@@ -1056,7 +1178,17 @@ public class UserUtil {
         }
         request.clear();
 
-        String password = generateRandomPassword(8);
+        String password = "";
+        
+        System.out.println("Channel - " + channel);
+        System.out.println("Channel true - " + common.generateNewPinRandomFour());
+        
+        if (channel.trim().equalsIgnoreCase("app")) {
+            password = common.generateNewPinRandomFour();
+        } else {
+            password = generateRandomPassword(8);
+        }
+        
         String hashPassword = new Common().generatedHashedPin(password, "A.B.", "12345678");
 
         JsonObject userDetails = fetchUserDetails("u.email", email);

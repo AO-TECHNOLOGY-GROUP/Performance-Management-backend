@@ -43,7 +43,8 @@ public class subtasks extends AbstractVerticle{
         eventBus.consumer("FETCHSUBTASKBYOBJ", this::fetchSubtasksByObjectives);
         eventBus.consumer("FETCHALLSUBTASKS", this::fetchAllSubtasks);
         eventBus.consumer("UPDATESUBTASKS", this::updateSubtasks); 
-        
+        eventBus.consumer("FETCHSUBTASKBYROLE", this::fetchSubtasksByRole);
+        eventBus.consumer("FETCHSUBTASKBYBRANCH", this::fetchSubtasksByBranch);
     }
     
     private void creatingSubtask(Message<JsonObject> message) {
@@ -54,7 +55,8 @@ public class subtasks extends AbstractVerticle{
         JsonObject requestBody = message.body();
         JsonArray subtasks = requestBody.getJsonArray("subtasks"); // Expecting an array of subtasks
         String objectiveId = requestBody.getString("objectiveId");
-
+        String branchId = requestBody.getString("branchId");
+        
        if (subtasks == null || subtasks.isEmpty()) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Error! Subtasks array is required.");
@@ -62,8 +64,8 @@ public class subtasks extends AbstractVerticle{
             return;
         }
 
-        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [Frequency], [Verification], [CreatedAt], [UpdatedAt]) " +
-                "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE())";
+        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [BranchId], [Frequency], [Verification], [CreatedAt], [UpdatedAt]) " +
+                "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
         try (PreparedStatement prCreateSubtask = connection.prepareStatement(createSubtaskSQL)) {
             
@@ -76,17 +78,18 @@ public class subtasks extends AbstractVerticle{
                 String frequency = subtask.getString("frequency");
                 String verification = subtask.getString("verification");
 
-                if (objectiveId == null || name == null) {
+                if (objectiveId == null || name == null || branchId == null) {
                     response.put("responseCode", "999")
-                            .put("responseDescription", "Error! ObjectiveId and Name are required for each subtask.");
+                            .put("responseDescription", "Error! ObjectiveId, Name and BranchId are required for each subtask.");
                     message.reply(response);
                     return;
                 }
 
                 prCreateSubtask.setString(1, objectiveId);
                 prCreateSubtask.setString(2, name);
-                prCreateSubtask.setString(3, frequency);
-                prCreateSubtask.setInt(4, Integer.parseInt(verification));
+                prCreateSubtask.setString(3, branchId);
+                prCreateSubtask.setString(4, frequency);
+                prCreateSubtask.setInt(5, Integer.parseInt(verification));
                 prCreateSubtask.addBatch();
             }
 
@@ -164,6 +167,7 @@ public class subtasks extends AbstractVerticle{
                     .put("Id", rs.getString("Id"))
                     .put("ObjectiveId", objectiveId)
                     .put("Name", rs.getString("Name"))
+                    .put("BranchId", rs.getString("BranchId"))
                     .put("Frequency", rs.getString("Frequency"))
                     .put("Verification", String.valueOf(rs.getInt("Verification")))
                     .put("CreatedAt", rs.getString("CreatedAt"))
@@ -206,7 +210,12 @@ public class subtasks extends AbstractVerticle{
         DBConnection dbConnection = new DBConnection();
         JsonArray result = new JsonArray();
 
-        String query = "SELECT * FROM [dbo].[Subtasks]";
+        String query = "SELECT S.*, r.name AS RoleName, o.Name AS ObjectiveName, b.Name AS BranchName FROM [dbo].[Subtasks] S "
+                + "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId "
+                + "INNER JOIN [dbo].[roles] r ON o.Role = r.id "
+                + "INNER JOIN [dbo].[Branches] b ON b.Id = S.BranchId ";
+     
+        
         try (Connection connection = dbConnection.getConnection();
              PreparedStatement prFetchAll = connection.prepareStatement(query)) {
 
@@ -215,10 +224,14 @@ public class subtasks extends AbstractVerticle{
             while (rs.next()) {
                 JsonObject jo = new JsonObject()
                         .put("Id", rs.getString("Id"))
-                        .put("ObjectiveId", rs.getString("ObjectiveId"))
                         .put("Name", rs.getString("Name"))
+                        .put("RoleName", rs.getString("RoleName"))
+                        .put("ObjectiveId", rs.getString("ObjectiveId"))
+                        .put("ObjectiveName", rs.getString("ObjectiveName"))
                         .put("Frequency", rs.getString("Frequency"))
                         .put("Verification", String.valueOf(rs.getInt("Verification")))
+                        .put("BranchId", rs.getString("BranchId")) 
+                        .put("BranchName", rs.getString("BranchName")) 
                         .put("CreatedAt", rs.getString("CreatedAt"))
                         .put("UpdatedAt", rs.getString("UpdatedAt"));
                 result.add(jo);
@@ -253,6 +266,7 @@ public class subtasks extends AbstractVerticle{
         String name = requestBody.getString("Name");
         String frequency = requestBody.getString("Frequency");
         String verification = requestBody.getString("Verification");
+        String BranchId = requestBody.getString("BranchId");
 
         if (id == null || id.isEmpty()) {
             response.put("responseCode", "999")
@@ -271,7 +285,8 @@ public class subtasks extends AbstractVerticle{
             prUpdateSubtask.setString(1, name);
             prUpdateSubtask.setString(2, frequency);
             prUpdateSubtask.setInt(3, Integer.parseInt(verification));
-            prUpdateSubtask.setString(4, id);
+            prUpdateSubtask.setString(4, BranchId);
+            prUpdateSubtask.setString(5, id);
 
             int rowsAffected = prUpdateSubtask.executeUpdate();
 
@@ -302,4 +317,121 @@ public class subtasks extends AbstractVerticle{
         message.reply(response);
     } 
     
+    private void fetchSubtasksByRole(Message<JsonObject> message){
+        DBConnection dbConnection = new DBConnection();
+        JsonObject response = new JsonObject();
+        
+        JsonObject requestBody = message.body();
+        String role = requestBody.getString("Role");
+
+        JsonArray result = new JsonArray();
+        
+        if (role == null || role.isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! Role is required.");
+            message.reply(response);
+            return;
+        }
+
+        String query = "SELECT s.* FROM [Performance_Management].[dbo].[Subtasks] s " +
+                           "JOIN [Performance_Management].[dbo].[Objectives] o ON s.ObjectiveId = o.Id " +
+                           "WHERE o.Role = ?";
+
+       try (Connection connection = dbConnection.getConnection();
+             PreparedStatement prFetch = connection.prepareStatement(query)) {
+
+            prFetch.setString(1, role);
+            ResultSet rs = prFetch.executeQuery();
+
+            while (rs.next()) {
+                JsonObject jo = new JsonObject()
+                       .put("Id", rs.getString("Id"))
+                       .put("ObjectiveId", rs.getString("ObjectiveId"))
+                       .put("Name", rs.getString("Name"))
+                       .put("BranchId", rs.getString("BranchId"))
+                       .put("Frequency", rs.getString("Frequency"))
+                       .put("Verification", rs.getString("Verification"))
+                       .put("CreatedAt", rs.getString("CreatedAt"))
+                       .put("UpdatedAt", rs.getString("UpdatedAt"));                                 
+                result.add(jo);
+                
+            }
+        } catch(Exception e) {
+            e.getMessage();
+        } finally {
+            dbConnection.closeConn();
+        }
+        
+        if (result.size() > 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Subtasks fetched successfully.")
+                    .put("data", result);
+        }else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to fetch Objectives.");
+        }
+        message.reply(response);
+    }
+    
+    private void fetchSubtasksByBranch(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        JsonArray result = new JsonArray();
+
+        JsonObject requestBody = message.body();
+        String branchId = requestBody.getString("branchId");
+
+        if (branchId == null || branchId.isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! BranchId is required.");
+            message.reply(response);
+            return;
+        }
+
+        String query = "SELECT S.*, o.Name AS ObjectiveName, r.name AS RoleName FROM [dbo].[Subtasks] S "
+                     + "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId "
+                     + "INNER JOIN [dbo].[roles] r ON o.Role = r.id "
+                     + "WHERE S.BranchId = ?";
+
+        try (Connection connection = dbConnection.getConnection();
+             PreparedStatement prFetchSubtasksByBranch = connection.prepareStatement(query)) {
+
+            prFetchSubtasksByBranch.setString(1, branchId);
+            ResultSet rs = prFetchSubtasksByBranch.executeQuery();
+
+            while (rs.next()) {
+                JsonObject subtask = new JsonObject()
+                        .put("Id", rs.getString("Id"))
+                        .put("ObjectiveId", rs.getString("ObjectiveId"))
+                        .put("ObjectiveName", rs.getString("ObjectiveName"))
+                        .put("Name", rs.getString("Name"))
+                        .put("RoleName", rs.getString("RoleName"))
+                        .put("Frequency", rs.getString("Frequency"))
+                        .put("Verification", String.valueOf(rs.getInt("Verification")))
+                        .put("CreatedAt", rs.getString("CreatedAt"))
+                        .put("UpdatedAt", rs.getString("UpdatedAt"));
+
+                result.add(subtask);
+            }
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        if (result.size() > 0) {
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Subtasks fetched successfully.")
+                    .put("data", result);
+        } else {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "No subtasks found for the given BranchId.");
+        }
+
+        message.reply(response);
+    }
 }
