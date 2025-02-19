@@ -49,6 +49,13 @@ public class dashboardResults extends AbstractVerticle {
             "        et.[BranchId], " +
             "        et.[SubtasksId], " +
             "        CASE " +
+            "            WHEN s.Frequency = 'Daily' THEN et.Target " +
+            "            WHEN s.Frequency = 'Weekly' THEN et.Target / 7 " +
+            "            WHEN s.Frequency = 'Monthly' THEN et.Target / 30 " +
+            "            WHEN s.Frequency = 'Quarterly' THEN et.Target / 90 " +
+            "            ELSE 0 " +
+            "        END AS DailyExpectedTarget, " +
+            "        CASE " +
             "            WHEN s.Frequency = 'Daily' THEN et.Target * 7 " +
             "            WHEN s.Frequency = 'Weekly' THEN et.Target " +
             "            WHEN s.Frequency = 'Monthly' THEN et.Target / 4 " +
@@ -69,6 +76,10 @@ public class dashboardResults extends AbstractVerticle {
             "            WHEN s.Frequency = 'Quarterly' THEN et.Target " +
             "            ELSE 0 " +
             "        END AS QuarterlyExpectedTarget, " +
+            "        COALESCE(SUM(CASE " +
+            "            WHEN pt.TaskDate >= DATEADD(DAY, -1, GETDATE()) THEN pt.AchievedTarget " +
+            "            ELSE 0 " + 
+            "        END), 0) AS DailyAchievedTarget, " +
             "        COALESCE(SUM(CASE " +
             "            WHEN pt.TaskDate >= DATEADD(DAY, -7, GETDATE()) THEN pt.AchievedTarget " +
             "            ELSE 0 " +
@@ -97,9 +108,11 @@ public class dashboardResults extends AbstractVerticle {
             ") " +
             "SELECT " +
             "    st.[ObjectiveId], " +    
-            "    st.[ObjectiveName]," +
+            "    st.[ObjectiveName], " +
             "    st.[SubtasksId], " +
             "    st.[SubtaskName], " +
+            "    st.[DailyExpectedTarget], " +
+            "    st.[DailyAchievedTarget], " +
             "    st.[WeeklyExpectedTarget], " +
             "    st.[WeeklyAchievedTarget], " +
             "    st.[MonthlyExpectedTarget], " +
@@ -119,6 +132,8 @@ public class dashboardResults extends AbstractVerticle {
                 JsonObject subtaskData = new JsonObject()
                         .put("SubtasksId", rs.getString("SubtasksId"))
                         .put("SubtaskName", rs.getString("SubtaskName"))
+                        .put("DailyExpectedTarget", rs.getString("DailyExpectedTarget"))   
+                        .put("DailyAchievedTarget", rs.getString("DailyAchievedTarget"))   
                         .put("WeeklyExpectedTarget", rs.getString("WeeklyExpectedTarget"))
                         .put("WeeklyAchievedTarget", rs.getString("WeeklyAchievedTarget"))
                         .put("MonthlyExpectedTarget", rs.getString("MonthlyExpectedTarget"))

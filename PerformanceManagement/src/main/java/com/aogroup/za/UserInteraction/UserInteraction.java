@@ -47,70 +47,6 @@ public class UserInteraction extends AbstractVerticle{
         
     }
     
-//    private void sendOTP(Message<JsonObject> message) {
-//        JsonObject data = message.body();
-//        MultiMap headers = message.headers();
-//
-//        if (headers.isEmpty()) {
-//            message.fail(666, "Unauthenticated User");
-//            return;
-//        }
-//        
-//        DBConnection dbConnection = new DBConnection();
-//        JsonObject response = new JsonObject();
-//        String otp = new Common().generateRandom(6);
-//        String customerNumber = data.getString("customerNumber");
-//        
-//        // Fetch from customer details
-//        String query = "SELECT * FROM [Dfa].[dbo].[customer_details_stub] WHERE customer_number = '"+ customerNumber +"'";
-//        
-//        try {
-//            ResultSet rs = dbConnection.query_all(query);
-//            
-//            if (rs.next()){
-//                String phoneNumber = rs.getString("phone_number");
-//                String name = rs.getString("first_name") + rs.getString("last_name");
-//                
-//                // update unused previous codes
-//                String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = '"+ customerNumber +"'";
-//                
-//                int i = dbConnection.update_db(updateSql);
-//                
-//                String sql = "INSERT INTO verification_codes ([code],[phone_number],[intent],[customer_number])" +
-//                " VALUES ('"+ otp +"','"+ phoneNumber +"','Customer Verification','"+ customerNumber +"')";
-//
-//
-//                int j = dbConnection.update_db(sql);
-//
-//                String otpSMS = "Dear "+name.toUpperCase()+", your One Time Password is "+otp+".";
-//
-//                JsonObject messageObject = new JsonObject();
-//
-//                messageObject
-//                        .put("phonenumber", phoneNumber)
-//                        .put("msg", otpSMS);
-//
-//                eventBus.send("COMMUNICATION_ADAPTOR",messageObject);
-//
-//                response
-//                        .put("responseCode", "000")
-//                        .put("responseDescription", "OTP sent successfully.");
-//                
-//            }
-//        } catch (Exception e) {
-//            e.getMessage();
-//            response
-//                        .put("responseCode", "999")
-//                        .put("responseDescription", "OTP failed to send.");
-//        } finally {
-//            dbConnection.closeConn();
-//        }
-//
-//        
-//        message.reply(response);
-//    }
-
-//
 
     private void sendOTP(Message<JsonObject> message) {
         JsonObject data = message.body();
@@ -268,6 +204,7 @@ public class UserInteraction extends AbstractVerticle{
         }
         String user_uuid = headers.get("user_uuid");
         String user_branch_id = headers.get("user_branch_id");
+        String user_type = headers.get("user_role_id");
         
         DBConnection dbConnection = new DBConnection();
         Connection connection = dbConnection.getConnection();
@@ -364,7 +301,7 @@ public class UserInteraction extends AbstractVerticle{
             String roleName = null;
 
             try (PreparedStatement psFetchRole = connection.prepareStatement(fetchRoleSQL)) {
-                psFetchRole.setInt(1, status);
+                psFetchRole.setInt(1, Integer.parseInt(user_type));
                 ResultSet rsRole = psFetchRole.executeQuery();
                 if (rsRole.next()) {
                     roleName = rsRole.getString("name");
@@ -406,11 +343,107 @@ public class UserInteraction extends AbstractVerticle{
                         }
                     }
                 }
-            }
-
-            response.put("responseCode", "000")
+                
+                response.put("responseCode", "000")
                     .put("responseDescription", "Task submitted" + ("RO".equals(roleName) ? " and escalated" : "") + " successfully");
+                
+            } else if ("BM".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If BM is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchAMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'AM' AND ub.BranchId = ?";
 
+                    try (PreparedStatement psFetchAM = connection.prepareStatement(fetchAMDetailsSQL)) {
+                        psFetchAM.setString(1, user_branch_id);  
+                        ResultSet rsAM = psFetchAM.executeQuery();
+                        if (rsAM.next()) {
+                            String amEmail = rsAM.getString("email");
+                            String amPhoneNumber = rsAM.getString("phone_number");
+                            String amName = rsAM.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(amEmail, amPhoneNumber, amName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: AM not found for the given Branch Manager.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("BM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }else if ("AM".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If AM is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchChiefDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'Chief' AND ub.BranchId = ?";
+
+                    try (PreparedStatement psFetchChief = connection.prepareStatement(fetchChiefDetailsSQL)) {
+                        psFetchChief.setString(1, user_branch_id);  
+                        ResultSet rsChief = psFetchChief.executeQuery();
+                        if (rsChief.next()) {
+                            String chiefEmail = rsChief.getString("email");
+                            String chiefPhoneNumber = rsChief.getString("phone_number");
+                            String chiefName = rsChief.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(chiefEmail, chiefPhoneNumber, chiefName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: Chief not found for the given Area Manager.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("AM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }else if ("Chief".equals(roleName)){
+              
+                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                    // If RO is escalating to themselves, they should receive the SMS and Email
+                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                } else {
+                    String fetchCEODetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                            + " WHERE r.name = 'CEO' AND ub.BranchId = ?";
+
+                    try (PreparedStatement psFetchCEO = connection.prepareStatement(fetchCEODetailsSQL)) {
+                        psFetchCEO.setString(1, user_branch_id);  
+                        ResultSet rsCEO = psFetchCEO.executeQuery();
+                        if (rsCEO.next()) {
+                            String CEOEmail = rsCEO.getString("email");
+                            String CEOPhoneNumber = rsCEO.getString("phone_number");
+                            String CEOName = rsCEO.getString("Name");
+
+                            // Send escalation notifications to BM
+                            sendEscalationNotification(CEOEmail, CEOPhoneNumber, CEOName, header, notes);
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Error: CEO not found for the given Chief.");
+                            message.reply(response);
+                            return;
+                        }
+                    }
+                }
+                
+                response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted" + ("Chief".equals(roleName) ? " and escalated" : "") + " successfully");
+
+            }
         } catch (Exception e) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());

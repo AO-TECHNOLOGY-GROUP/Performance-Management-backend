@@ -147,6 +147,7 @@ public class UserAuth extends AbstractVerticle {
                 .addHeader("user", userDetails.getString("id"))
                 .addHeader("user_uuid", uuid)
                 .addHeader("user_name", user_fullname)
+                .addHeader("user_role_id", userDetails.getString("type"))
                 .addHeader("user_branch_id", usersBranchesJsonArray.getString(0))
 //                .addHeader("user_branch_name", userDetails.getString("branchName"))
                 .addHeader("user_branches", userBranchesString);
