@@ -1,6 +1,0 @@
-2025-01-31 10:29:31 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error! OTP is invalid","userId":"1","user_uuid":"D2F9516F-0EF3-492B-8E2F-CC2592C30449"}
-
-
-2025-01-31 17:05:49 ~ DFA | com.co.ke.main.EntryPoint | 191 | lambda$null$0() | Response to channel - {"responseCode":"999","responseDescription":"Error: Invalid column name 'user_uuid'."}
-
-
