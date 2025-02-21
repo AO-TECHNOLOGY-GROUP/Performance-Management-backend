@@ -191,6 +191,7 @@ public class employeeTasks extends AbstractVerticle{
                        "       s.Name AS SubtaskName, " +
                        "       s.Frequency, " +
                        "       s.Verification, " +
+                       "       s.isMultiple, " +
                        "       e.Target, " +
                        "       p.TaskDate, " +
                        "       p.ExpectedTarget, " +
@@ -214,6 +215,7 @@ public class employeeTasks extends AbstractVerticle{
                 String subtaskName = rs.getString("SubtaskName");
                 String frequency = rs.getString("Frequency");
                 int verification = rs.getInt("Verification");
+                int isMultiple = rs.getInt("isMultiple");
                 int target = rs.getInt("Target");
                 String taskDate = !rs.getString("TaskDate").isEmpty() ? rs.getString("TaskDate") : null;
                 int expected = rs.getInt("ExpectedTarget");
@@ -240,6 +242,7 @@ public class employeeTasks extends AbstractVerticle{
                         .put("Target", target)
                         .put("Frequency", frequency)
                         .put("Verification", String.valueOf(verification))
+                        .put("IsMultiple", String.valueOf(isMultiple))
                         .put("Progress", new JsonArray());
                     subtasksArray.add(subtaskData);
                 }

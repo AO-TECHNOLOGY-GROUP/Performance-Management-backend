@@ -918,100 +918,108 @@ public class UserUtil {
     }
     
     public JsonObject otpVerification(JsonObject request) {
-    String otp = request.getString("otp");
-    String user_uuid = request.getString("user_uuid");
-    request.clear();
+        String otp = request.getString("otp");
+        String user_uuid = request.getString("user_uuid");
+        request.clear();
 
-    String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
+        String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
 
-    JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
-    if (!loginValidationDetails.getBoolean("successIndicator")) {
-        return request
-                .put("responseCode", ERROR_CODE)
-                .put("responseDescription", "Error! Failed to fetch login details");
-    }
-    String lv_id = loginValidationDetails.getString("id");
-    String lv_otpHash = loginValidationDetails.getString("otpHash");
-    String lv_changePassword = loginValidationDetails.getString("changePassword");
-
-    if (!hashedOTP.equals(lv_otpHash)) {
-        return request
-                .put("responseCode", ERROR_CODE)
-                .put("responseDescription", "Error! OTP is invalid");
-    }
-
-    String sql = "UPDATE login_validation SET otp_verified = '1', reference = ?, updated_at = GETDATE() WHERE id = ?";
-    DBConnection dbConnection = new DBConnection();
-    try (PreparedStatement preparedStatement = dbConnection.getConnection().prepareStatement(sql)) {
-        preparedStatement.setString(1, otp);
-        preparedStatement.setString(2, lv_id);
-        int i = preparedStatement.executeUpdate();
-        
-        if (i == 1) {
-            request
-                    .put("responseCode", SUCCESS_CODE)
-                    .put("responseDescription", "Success! OTP Validated");
-
-            JsonObject userDetails = fetchUserDetails("uuid", user_uuid);
-            if (!userDetails.getBoolean("successIndicator")) {
-                return request
-                        .put("responseCode", ERROR_CODE)
-                        .put("responseDescription", "Error! Unable to fetch user details");
-            }
-
-            // Get user details
-            String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
-            String email = userDetails.getString("email");
-            String phoneNumber = userDetails.getString("phoneNumber");
-            String branch = userDetails.getJsonArray("userBranches").getString(0);
-            String roleName = userDetails.getString("roleName");
-            JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
-
-            // Determine the next escalation role
-            String nextRole = getNextEscalationRole(roleName);
-            if (nextRole != null) {
-                Map<String, Object> searchCriteria = new HashMap<>();
-                searchCriteria.put("ub.BranchId", branch);
-                searchCriteria.put("r.name", nextRole);
-
-                JsonObject escalatedUserDetails = fetchUserDetails(searchCriteria);
-                if (escalatedUserDetails.getBoolean("successIndicator")) {
-                    JsonObject escalationDetails = new JsonObject();
-                    escalationDetails
-                            .put("name", escalatedUserDetails.getString("firstName") + " " + escalatedUserDetails.getString("lastName"))
-                            .put("uuid", escalatedUserDetails.getString("uuid"))
-                            .put("roleName", escalatedUserDetails.getString("roleName"))
-                            .put("phoneNumber", escalatedUserDetails.getString("phoneNumber"))
-                            .put("email", escalatedUserDetails.getString("email"));
-
-                    request.put("escalation", escalationDetails);
-                }
-            }
-
-            request
-                    .put("roleName", roleName)
-                    .put("changePassword", lv_changePassword)
-                    .put("name", name)
-                    .put("email", email)
-                    .put("phoneNumber", phoneNumber)
-                    .put("rolePermission", fetchRolePermissionsArray("r.name", roleName))
-                    .put("userBranches", userBranches);
-        } else {
-            request
+        JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
+        if (!loginValidationDetails.getBoolean("successIndicator")) {
+            return request
                     .put("responseCode", ERROR_CODE)
-                    .put("responseDescription", "ERROR! OTP not updated");
+                    .put("responseDescription", "Error! Failed to fetch login details");
         }
-    } catch (SQLException e) {
-        e.printStackTrace();
-        return request
-                .put("responseCode", ERROR_CODE)
-                .put("responseDescription", "Database error: " + e.getMessage());
-    } finally {
-        dbConnection.closeConn();
-    }
+        String lv_id = loginValidationDetails.getString("id");
+        String lv_otpHash = loginValidationDetails.getString("otpHash");
+        String lv_changePassword = loginValidationDetails.getString("changePassword");
 
-    return request;
-}
+        if (!hashedOTP.equals(lv_otpHash)) {
+            return request
+                    .put("responseCode", ERROR_CODE)
+                    .put("responseDescription", "Error! OTP is invalid");
+        }
+
+        String sql = "UPDATE login_validation SET otp_verified = '1', reference = ?, updated_at = GETDATE() WHERE id = ?";
+        DBConnection dbConnection = new DBConnection();
+        try (PreparedStatement preparedStatement = dbConnection.getConnection().prepareStatement(sql)) {
+            preparedStatement.setString(1, otp);
+            preparedStatement.setString(2, lv_id);
+            int i = preparedStatement.executeUpdate();
+
+            if (i == 1) {
+                request
+                        .put("responseCode", SUCCESS_CODE)
+                        .put("responseDescription", "Success! OTP Validated");
+
+                JsonObject userDetails = fetchUserDetails("uuid", user_uuid);
+                if (!userDetails.getBoolean("successIndicator")) {
+                    return request
+                            .put("responseCode", ERROR_CODE)
+                            .put("responseDescription", "Error! Unable to fetch user details");
+                }
+
+                String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
+                String email = userDetails.getString("email");
+                String phoneNumber = userDetails.getString("phoneNumber");
+                String branch = userDetails.getJsonArray("userBranches").getString(0);
+                String roleName = userDetails.getString("roleName");
+                JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
+
+                String nextRole = getNextEscalationRole(roleName);
+                JsonObject escalationDetails = new JsonObject();
+
+                if (nextRole != null) {
+                    Map<String, Object> searchCriteria = new HashMap<>();
+                    searchCriteria.put("ub.BranchId", branch);
+                    searchCriteria.put("r.name", nextRole);
+
+                    JsonObject escalatedUserDetails = fetchUserDetails(searchCriteria);
+                    if (escalatedUserDetails.getBoolean("successIndicator")) {
+                        escalationDetails
+                                .put("name", escalatedUserDetails.getString("firstName") + " " + escalatedUserDetails.getString("lastName"))
+                                .put("uuid", escalatedUserDetails.getString("uuid"))
+                                .put("roleName", escalatedUserDetails.getString("roleName"))
+                                .put("phoneNumber", escalatedUserDetails.getString("phoneNumber"))
+                                .put("email", escalatedUserDetails.getString("email"));
+                    }
+                }
+                // Only one fallback for missing escalation details
+                if (escalationDetails.isEmpty()) {
+                    escalationDetails
+                            .put("name", "")
+                            .put("uuid", "")
+                            .put("roleName", "")
+                            .put("phoneNumber", "")
+                            .put("email", "");
+                }
+
+                request.put("escalation", escalationDetails);
+
+                request
+                        .put("roleName", roleName)
+                        .put("changePassword", lv_changePassword)
+                        .put("name", name)
+                        .put("email", email)
+                        .put("phoneNumber", phoneNumber)
+                        .put("rolePermission", fetchRolePermissionsArray("r.name", roleName))
+                        .put("userBranches", userBranches);
+            } else {
+                request
+                        .put("responseCode", ERROR_CODE)
+                        .put("responseDescription", "ERROR! OTP not updated");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return request
+                    .put("responseCode", ERROR_CODE)
+                    .put("responseDescription", "Database error: " + e.getMessage());
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        return request;
+    }
 
     public String getNextEscalationRole(String roleName) {
         Map<String, String> escalationMap = new HashMap<>();
@@ -1022,136 +1030,6 @@ public class UserUtil {
 
         return escalationMap.get(roleName); // Returns next role, or null if not found
     }
-
-
-//    public JsonObject otpVerification(JsonObject request) {
-//        String otp = request.getString("otp");
-//        String user_uuid = request.getString("user_uuid");
-//        request.clear();
-//
-//        String hashedOTP = new Common().generatedHashedPin(otp, "1", "2");
-//
-//        JsonObject loginValidationDetails = fetchLoginValidationDetails("uuid", user_uuid);
-//        if (!loginValidationDetails.getBoolean("successIndicator")) {
-//            return request
-//                    .put("responseCode", ERROR_CODE)
-//                    .put("responseDescription", "Error! Failed to fetch login details");
-//        }
-//        String lv_id = loginValidationDetails.getString("id");
-//        String lv_otpHash = loginValidationDetails.getString("otpHash");
-//        String lv_changePassword = loginValidationDetails.getString("changePassword");
-//
-//        if (!hashedOTP.equals(lv_otpHash)) {
-//            return request
-//                    .put("responseCode", ERROR_CODE)
-//                    .put("responseDescription", "Error! OTP is invalid");
-//        }
-//
-//        String sql = "UPDATE login_validation SET otp_verified = '1',reference = '" + otp + "',updated_at = GETDATE() WHERE id = " + lv_id + "";
-//        DBConnection dbConnection = new DBConnection();
-//        int i = dbConnection.update_db(sql);
-//        if (i == 1) {
-//            request
-//                    .put("responseCode", SUCCESS_CODE)
-//                    .put("responseDescription", "Success! OTP Validated");
-//
-//            JsonObject userDetails = fetchUserDetails("uuid", user_uuid);
-//            if (!userDetails.getBoolean("successIndicator")) {
-//                request
-//                        .put("responseCode", ERROR_CODE)
-//                        .put("responseDescription", "Error! Unable to fetch user details");
-//                return request;
-//            }
-//            String name = userDetails.getString("firstName") + " " + userDetails.getString("lastName");
-//            String email = userDetails.getString("email");
-//            String phoneNumber = userDetails.getString("phoneNumber");
-//            String branch = userDetails.getJsonArray("userBranches").getString(0);
-//            String role = userDetails.getString("type");
-//            String roleName = userDetails.getString("roleName");
-//            
-//            JsonArray userBranches = userDetails.getJsonArray("userBranchesDetails");
-//            System.out.println("role - " + role);
-//            if ( Integer.parseInt(role) == 2) {
-//                  
-//                JsonObject adminDetails = fetchUserDetails("type", "4");
-//                if (!adminDetails.getBoolean("successIndicator")) {
-//                    request
-//                            .put("responseCode", ERROR_CODE)
-//                            .put("responseDescription", "Error! Unable to fetch user details");
-//                    return request;
-//                }
-//                
-//                String adminname = adminDetails.getString("firstName") + " " + adminDetails.getString("lastName"); 
-//                String adminuuid = adminDetails.getString("uuid");
-//                String adminrole = adminDetails.getString("type");
-//                String adminroleName = adminDetails.getString("roleName");
-//                String adminphoneNumber = adminDetails.getString("phoneNumber");
-//                String adminemail = adminDetails.getString("email");
-//
-//                JsonObject adminStore = new JsonObject();
-//                adminStore
-//                        .put("name",adminname)
-//                        .put("uuid",adminuuid)
-//                        .put("roleName",adminroleName)
-//                        .put("phoneNumber",adminphoneNumber)
-//                        .put("email",adminemail);
-//                
-//                
-//                request
-//                        .put("escalation",adminStore);
-//              
-//            } else if(Integer.parseInt(role) == 3) {
-//                Map<String, Object> searchCriteria = new HashMap<>();
-//                searchCriteria.put("ub.BranchId", branch);
-//                searchCriteria.put("type", 2);
-//
-//                JsonObject BMDetails = fetchUserDetails(searchCriteria);
-//                System.out.println("details - " + BMDetails);
-//                  
-////                JsonObject BMDetails = fetchUserDetails("branch = '" +branch+ "' and [type]", "2");
-//                if (!userDetails.getBoolean("successIndicator")) {
-//                    request
-//                            .put("responseCode", ERROR_CODE)
-//                            .put("responseDescription", "Error! Unable to fetch user details");
-//                    return request;
-//                }
-//                
-//                String bmname = BMDetails.getString("firstName") + " " + BMDetails.getString("lastName"); 
-//                String bmuuid = BMDetails.getString("uuid");
-//                String bmrole = BMDetails.getString("type");
-//                String bmroleName = BMDetails.getString("roleName");
-//                String bmphoneNumber = BMDetails.getString("phoneNumber");
-//                String bmemail = BMDetails.getString("email");
-//
-//                JsonObject bmStore = new JsonObject();
-//                bmStore
-//                        .put("name",bmname)
-//                        .put("uuid",bmuuid)
-//                        .put("roleName",bmroleName)
-//                        .put("phoneNumber",bmphoneNumber)
-//                        .put("email",bmemail);
-//                
-//                request
-//                        .put("escalation",bmStore);
-//            }
-//             
-//            
-//            request
-//                    .put("roleName", roleName)
-//                    .put("changePassword", lv_changePassword)
-//                    .put("name", name)
-//                    .put("email", email)
-//                    .put("phoneNumber", phoneNumber)
-//                    .put("rolePermission", fetchRolePermissionsArray("r.[id]", role))
-//                    .put("userBranches", userBranches);
-//        } else {
-//            request
-//                    .put("responseCode", ERROR_CODE)
-//                    .put("responseDescription", "ERROR! OTP not updated");
-//        }
-//        dbConnection.closeConn();
-//        return request;
-//    }
     
     public JsonObject logout(JsonObject request) {
         request.clear();

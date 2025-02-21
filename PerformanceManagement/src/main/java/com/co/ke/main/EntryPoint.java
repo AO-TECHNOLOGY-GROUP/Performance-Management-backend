@@ -3,6 +3,7 @@ package com.co.ke.main;
 
 import com.aogroup.za.DashboardResults.dashboardResults;
 import com.aogroup.za.EmployeeTasks.employeeTasks;
+//import com.aogroup.za.FetchBalance.fetchbalance;
 import com.aogroup.za.UserInteraction.UserInteraction;
 import com.aogroup.za.Objectives.objectives;
 import com.aogroup.za.Subtasks.subtasks;
@@ -52,12 +53,20 @@ public class EntryPoint extends AbstractVerticle {
     public static String SYSTEM_HOST;
     public static String ESB_ENDPOINT;
     public static String SMS_ENDPOINT;
-
     public static String SMTP_HOST;
     public static String SMTP_PORT;
     public static String SMTP_EMAIL;
     public static String SMTP_PASSWORD;
-
+    
+    
+    public static String T24_IP;
+    public static String T24_PORT;
+    public static String COMPANY_NAME;
+    public static String COMPANY_PASSWORD;
+    public static String COMPANY_USERNAME;
+    public static String AGRI_IP;
+    public static String AGRI_PORT;
+    
     // Hikari Setup
     static int MAX_POOL_SIZE = 3;
     static int MAX_IDLE_TIME = 4;
@@ -80,11 +89,17 @@ public class EntryPoint extends AbstractVerticle {
         SYSTEM_HOST = "";
         ESB_ENDPOINT = "";
         SMS_ENDPOINT = "";
-
         SMTP_HOST = "";
         SMTP_PORT = "";
         SMTP_PASSWORD = "";
         SMTP_EMAIL = "";
+        
+        
+        T24_IP = "";
+        T24_PORT = "";
+        COMPANY_NAME = "";
+        COMPANY_PASSWORD = "";
+        COMPANY_USERNAME = "";
     }
 
     public static void main(String[] args) {
@@ -106,17 +121,20 @@ public class EntryPoint extends AbstractVerticle {
         SYSTEM_HOST = props.getSYSTEM_HOST();
         ESB_ENDPOINT = props.getESB_ENDPOINT();
         SMS_ENDPOINT = props.getSMS_ENDPOINT();
-
-//        SMTP_HOST = props.getEMAIL_HOST();
-//        SMTP_PORT = props.getEMAIL_PORT();
-//        SMTP_EMAIL = props.getEMAIL_SENDER();
-//        SMTP_PASSWORD = props.getEMAIL_PASSWORD();
-
         SMTP_HOST = props.getEMAIL_HOST();
         SMTP_PORT = props.getEMAIL_PORT();
         SMTP_EMAIL = props.getEMAIL_SENDER();
         SMTP_PASSWORD = props.getEMAIL_PASSWORD();
 
+        
+        T24_IP = props.getT24_IP();
+        T24_PORT = props.getT24_PORT();
+        COMPANY_NAME = props.getCOMPANY_NAME();
+        COMPANY_PASSWORD = props.getCOMPANY_PASSWORD();
+        COMPANY_USERNAME = props.getCOMPANY_USERNAME();
+        AGRI_IP = props.getAGRI_IP();
+        AGRI_PORT = props.getAGRI_PORT();
+        
     
         // Deployment options
         DeploymentOptions options = new DeploymentOptions()
@@ -138,6 +156,7 @@ public class EntryPoint extends AbstractVerticle {
         vertx.deployVerticle(UserAuth.class.getName(), options);
         vertx.deployVerticle(UserInteraction.class.getName(), options);
         vertx.deployVerticle(dashboardResults.class.getName(), options);
+//        vertx.deployVerticle(fetchbalance.class.getName(), options);
           }
 
     @Override

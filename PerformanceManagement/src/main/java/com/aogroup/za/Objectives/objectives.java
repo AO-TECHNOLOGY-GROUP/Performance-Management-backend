@@ -53,7 +53,7 @@ public class objectives extends AbstractVerticle{
         
         JsonArray name = requestBody.getJsonArray("Name");
         String role = requestBody.getString("Role");
-        String target = requestBody.getString("Target");
+        JsonArray target = requestBody.getJsonArray("Target");
         String periodStart = requestBody.getString("PeriodStart");
         String periodEnd = requestBody.getString("PeriodEnd");
 
@@ -69,7 +69,7 @@ public class objectives extends AbstractVerticle{
 
                prCreateObjectives.setString(1, name.getString(x));
                prCreateObjectives.setString(2, role);
-               prCreateObjectives.setString(3, target);
+               prCreateObjectives.setString(3, target.getString(x));
                prCreateObjectives.setString(4, periodStart);
                prCreateObjectives.setString(5, periodEnd);
                prCreateObjectives.addBatch();

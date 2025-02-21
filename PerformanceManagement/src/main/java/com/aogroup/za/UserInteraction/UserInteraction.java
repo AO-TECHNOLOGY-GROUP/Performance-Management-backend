@@ -210,246 +210,357 @@ public class UserInteraction extends AbstractVerticle{
         Connection connection = dbConnection.getConnection();
 
         JsonObject requestBody = message.body();
-        String employeeTaskId = requestBody.getString("EmployeeTaskId");
-        String customerPhoneNumber = requestBody.getString("CustomerPhoneNumber");
-        String header = requestBody.getString("Header");
-        String notes = requestBody.getString("Notes");
-        String longitude = requestBody.getString("Longitude");
-        String latitude = requestBody.getString("Latitude");
-        String escalatedToUserUUID = requestBody.getString("EscalatedToUserUUID", null);
-        String escalatedToEmail = requestBody.getString("EscalatedToEmail", null);
-        String escalatedToPhoneNumber = requestBody.getString("EscalatedToPhoneNumber", null);
-        String escalatedToName = requestBody.getString("EscalatedToName", null);
-        int status = Integer.parseInt(requestBody.getString("Status"));
 
-        try {
-            // Fetch the expected target from EmployeeTasks table
-            String fetchTargetSQL = "SELECT Target FROM EmployeeTasks WHERE Id = ?";
-            int expectedTarget = 0;
+        String ismultiple = requestBody.getString("IsMultiple");
+           
+        
+        if(ismultiple.equals("0")){
+        
+            String employeeTaskId = requestBody.getString("EmployeeTaskId");
+            String customerPhoneNumber = requestBody.getString("CustomerPhoneNumber");
+            String header = requestBody.getString("Header");
+            String notes = requestBody.getString("Notes");
+            String longitude = requestBody.getString("Longitude");
+            String latitude = requestBody.getString("Latitude");
+            String escalatedToUserUUID = requestBody.getString("EscalatedToUserUUID", null);
+            String escalatedToEmail = requestBody.getString("EscalatedToEmail", null);
+            String escalatedToPhoneNumber = requestBody.getString("EscalatedToPhoneNumber", null);
+            String escalatedToName = requestBody.getString("EscalatedToName", null);
+            int status = Integer.parseInt(requestBody.getString("Status"));
 
-            try (PreparedStatement psFetchTarget = connection.prepareStatement(fetchTargetSQL)) {
-                psFetchTarget.setString(1, employeeTaskId);
-                ResultSet rsTarget = psFetchTarget.executeQuery();
-                if (rsTarget.next()) {
-                    expectedTarget = rsTarget.getInt("Target");
-                } else {
-                    response.put("responseCode", "999")
-                            .put("responseDescription", "Error: EmployeeTaskId not found.");
-                    message.reply(response);
-                    return;
+            try {
+                // Fetch the expected target from EmployeeTasks table
+                String fetchTargetSQL = "SELECT Target FROM EmployeeTasks WHERE Id = ?";
+                int expectedTarget = 0;
+
+                try (PreparedStatement psFetchTarget = connection.prepareStatement(fetchTargetSQL)) {
+                    psFetchTarget.setString(1, employeeTaskId);
+                    ResultSet rsTarget = psFetchTarget.executeQuery();
+                    if (rsTarget.next()) {
+                        expectedTarget = rsTarget.getInt("Target");
+                    } else {
+                        response.put("responseCode", "999")
+                                .put("responseDescription", "Error: EmployeeTaskId not found.");
+                        message.reply(response);
+                        return;
+                    }
                 }
-            }
 
-            // Insert new task submission
-            String insertSubmissionSQL = "INSERT INTO UserTaskSubmissions " +
-                    "(EmployeeTaskId, TaskDate, CustomerPhoneNumber, Header, Notes, Longitude, Latitude, Status, Escalation, CreatedAt, UpdatedAt) " +
-                    "VALUES (?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+                // Insert new task submission
+                String insertSubmissionSQL = "INSERT INTO UserTaskSubmissions " +
+                        "(EmployeeTaskId, TaskDate, CustomerPhoneNumber, Header, Notes, Longitude, Latitude, Status, Escalation, CreatedAt, UpdatedAt) " +
+                        "VALUES (?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
-            try (PreparedStatement psInsert = connection.prepareStatement(insertSubmissionSQL)) {
-                psInsert.setString(1, employeeTaskId);
-                psInsert.setString(2, customerPhoneNumber);
-                psInsert.setString(3, header);
-                psInsert.setString(4, notes);
-                psInsert.setString(5, longitude);
-                psInsert.setString(6, latitude);
-                psInsert.setInt(7, status);
-                psInsert.setString(8, escalatedToUserUUID);
-                psInsert.executeUpdate();
-            }
+                try (PreparedStatement psInsert = connection.prepareStatement(insertSubmissionSQL)) {
+                    psInsert.setString(1, employeeTaskId);
+                    psInsert.setString(2, customerPhoneNumber);
+                    psInsert.setString(3, header);
+                    psInsert.setString(4, notes);
+                    psInsert.setString(5, longitude);
+                    psInsert.setString(6, latitude);
+                    psInsert.setInt(7, status);
+                    psInsert.setString(8, escalatedToUserUUID);
+                    psInsert.executeUpdate();
+                }
 
-            // Update AchievedTarget in ProgressiveTracking
-            String updateProgressSQL = "UPDATE ProgressiveTracking " +
-                    "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
-                    "WHERE EmployeeTaskId = ? AND TaskDate = CAST(GETDATE() AS DATE)";
+                 response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted successfully");
 
-            try (PreparedStatement psUpdate = connection.prepareStatement(updateProgressSQL)) {
-                psUpdate.setString(1, employeeTaskId);
-                int rowsUpdated = psUpdate.executeUpdate();
+                // Update AchievedTarget in ProgressiveTracking
+                String updateProgressSQL = "UPDATE ProgressiveTracking " +
+                        "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
+                        "WHERE EmployeeTaskId = ? AND TaskDate = CAST(GETDATE() AS DATE)";
 
-                if (rowsUpdated == 0) {
-                    // If no row exists for today, find the next closest future TaskDate
-                    String closestFutureSQL = "SELECT TOP 1 Id FROM ProgressiveTracking " +
-                            "WHERE TaskDate > CAST(GETDATE() AS DATE) AND EmployeeTaskId = ? ORDER BY TaskDate ASC";
+                try (PreparedStatement psUpdate = connection.prepareStatement(updateProgressSQL)) {
+                    psUpdate.setString(1, employeeTaskId);
+                    int rowsUpdated = psUpdate.executeUpdate();
 
-                    try (PreparedStatement psClosest = connection.prepareStatement(closestFutureSQL)) {
-                        psClosest.setString(1, employeeTaskId);
-                        ResultSet rs = psClosest.executeQuery();
+                    if (rowsUpdated == 0) {
+                        // If no row exists for today, find the next closest future TaskDate
+                        String closestFutureSQL = "SELECT TOP 1 Id FROM ProgressiveTracking " +
+                                "WHERE TaskDate > CAST(GETDATE() AS DATE) AND EmployeeTaskId = ? ORDER BY TaskDate ASC";
 
-                        if (rs.next()) {
-                            String closestTaskId = rs.getString("Id");
+                        try (PreparedStatement psClosest = connection.prepareStatement(closestFutureSQL)) {
+                            psClosest.setString(1, employeeTaskId);
+                            ResultSet rs = psClosest.executeQuery();
 
-                            String updateClosestSQL = "UPDATE ProgressiveTracking " +
-                                    "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
-                                    "WHERE Id = ?";
+                            if (rs.next()) {
+                                String closestTaskId = rs.getString("Id");
 
-                            try (PreparedStatement psUpdateClosest = connection.prepareStatement(updateClosestSQL)) {
-                                psUpdateClosest.setString(1, closestTaskId);
-                                psUpdateClosest.executeUpdate();
+                                String updateClosestSQL = "UPDATE ProgressiveTracking " +
+                                        "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
+                                        "WHERE Id = ?";
+
+                                try (PreparedStatement psUpdateClosest = connection.prepareStatement(updateClosestSQL)) {
+                                    psUpdateClosest.setString(1, closestTaskId);
+                                    psUpdateClosest.executeUpdate();
+                                }
+                            } else {
+                                response.put("responseCode", "999")
+                                        .put("responseDescription", "No suitable TaskDate found for updating AchievedTarget");
+                                message.reply(response);
+                                return;
                             }
-                        } else {
-                            response.put("responseCode", "999")
-                                    .put("responseDescription", "No suitable TaskDate found for updating AchievedTarget");
-                            message.reply(response);
-                            return;
                         }
                     }
                 }
+
+                // Fetch Role Name based on Status
+                String fetchRoleSQL = "SELECT name FROM roles WHERE id = ?";
+                String roleName = null;
+
+                try (PreparedStatement psFetchRole = connection.prepareStatement(fetchRoleSQL)) {
+                    psFetchRole.setInt(1, Integer.parseInt(user_type));
+                    ResultSet rsRole = psFetchRole.executeQuery();
+                    if (rsRole.next()) {
+                        roleName = rsRole.getString("name");
+                    } else {
+                        response.put("responseCode", "999")
+                                .put("responseDescription", "Error: Role ID not found.");
+                        message.reply(response);
+                        return;
+                    }
+                }
+
+                // Handle escalation logic based on role
+                if ("RO".equals(roleName)) {
+                    // Check if the RO is escalating to themselves
+                    if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                        // If RO is escalating to themselves, they should receive the SMS and Email
+                        sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                    } else {
+                        // If RO escalates to their BM, we need to get the BM's details.
+                        String fetchBMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                                + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                                + " WHERE r.name = 'BM' AND ub.BranchId = ?";
+
+                        try (PreparedStatement psFetchBM = connection.prepareStatement(fetchBMDetailsSQL)) {
+                            psFetchBM.setString(1, user_branch_id);  // fetch BM based on RO's BranchId
+                            ResultSet rsBM = psFetchBM.executeQuery();
+                            if (rsBM.next()) {
+                                String bmEmail = rsBM.getString("email");
+                                String bmPhoneNumber = rsBM.getString("phone_number");
+                                String bmName = rsBM.getString("Name");
+
+                                // Send escalation notifications to BM
+                                sendEscalationNotification(bmEmail, bmPhoneNumber, bmName, header, notes);
+                            } else {
+                                response.put("responseCode", "999")
+                                        .put("responseDescription", "Error: Branch Manager not found for the given RO.");
+                                message.reply(response);
+                                return;
+                            }
+                        }
+                    }
+
+                    response.put("responseCode", "000")
+                        .put("responseDescription", "Task submitted" + ("RO".equals(roleName) ? " and escalated" : "") + " successfully");
+
+                } else if ("BM".equals(roleName)){
+
+                    if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                        // If BM is escalating to themselves, they should receive the SMS and Email
+                        sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                    } else {
+                        String fetchAMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                                + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                                + " WHERE r.name = 'AM' AND ub.BranchId = ?";
+
+                        try (PreparedStatement psFetchAM = connection.prepareStatement(fetchAMDetailsSQL)) {
+                            psFetchAM.setString(1, user_branch_id);  
+                            ResultSet rsAM = psFetchAM.executeQuery();
+                            if (rsAM.next()) {
+                                String amEmail = rsAM.getString("email");
+                                String amPhoneNumber = rsAM.getString("phone_number");
+                                String amName = rsAM.getString("Name");
+
+                                // Send escalation notifications to BM
+                                sendEscalationNotification(amEmail, amPhoneNumber, amName, header, notes);
+                            } else {
+                                response.put("responseCode", "999")
+                                        .put("responseDescription", "Error: AM not found for the given Branch Manager.");
+                                message.reply(response);
+                                return;
+                            }
+                        }
+                    }
+
+                    response.put("responseCode", "000")
+                        .put("responseDescription", "Task submitted" + ("BM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+                }else if ("AM".equals(roleName)){
+
+                    if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                        // If AM is escalating to themselves, they should receive the SMS and Email
+                        sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                    } else {
+                        String fetchChiefDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                                + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                                + " WHERE r.name = 'Chief' AND ub.BranchId = ?";
+
+                        try (PreparedStatement psFetchChief = connection.prepareStatement(fetchChiefDetailsSQL)) {
+                            psFetchChief.setString(1, user_branch_id);  
+                            ResultSet rsChief = psFetchChief.executeQuery();
+                            if (rsChief.next()) {
+                                String chiefEmail = rsChief.getString("email");
+                                String chiefPhoneNumber = rsChief.getString("phone_number");
+                                String chiefName = rsChief.getString("Name");
+
+                                // Send escalation notifications to BM
+                                sendEscalationNotification(chiefEmail, chiefPhoneNumber, chiefName, header, notes);
+                            } else {
+                                response.put("responseCode", "999")
+                                        .put("responseDescription", "Error: Chief not found for the given Area Manager.");
+                                message.reply(response);
+                                return;
+                            }
+                        }
+                    }
+
+                    response.put("responseCode", "000")
+                        .put("responseDescription", "Task submitted" + ("AM".equals(roleName) ? " and escalated" : "") + " successfully");
+
+                }else if ("Chief".equals(roleName)){
+
+                    if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
+                        // If RO is escalating to themselves, they should receive the SMS and Email
+                        sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
+                    } else {
+                        String fetchCEODetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
+                                + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
+                                + " WHERE r.name = 'CEO' AND ub.BranchId = ?";
+
+                        try (PreparedStatement psFetchCEO = connection.prepareStatement(fetchCEODetailsSQL)) {
+                            psFetchCEO.setString(1, user_branch_id);  
+                            ResultSet rsCEO = psFetchCEO.executeQuery();
+                            if (rsCEO.next()) {
+                                String CEOEmail = rsCEO.getString("email");
+                                String CEOPhoneNumber = rsCEO.getString("phone_number");
+                                String CEOName = rsCEO.getString("Name");
+
+                                // Send escalation notifications to BM
+                                sendEscalationNotification(CEOEmail, CEOPhoneNumber, CEOName, header, notes);
+                            } else {
+                                response.put("responseCode", "999")
+                                        .put("responseDescription", "Error: CEO not found for the given Chief.");
+                                message.reply(response);
+                                return;
+                            }
+                        }
+                    }
+
+                    response.put("responseCode", "000")
+                        .put("responseDescription", "Task submitted" + ("Chief".equals(roleName) ? " and escalated" : "") + " successfully");
+
+                }
+            } catch (Exception e) {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Error: " + e.getMessage());
+                e.printStackTrace();
+            } finally {
+                dbConnection.closeConn();
             }
+        
+        }else if(ismultiple.equals("1")){
+            
+            int achieved = Integer.parseInt(requestBody.getString("Achieved"));
+            double amount = Double.parseDouble(requestBody.getString("Amount"));
+            int verificationstatus = Integer.parseInt(requestBody.getString("VerificationStatus"));
+            String employeeTaskId = requestBody.getString("EmployeeTaskId");
+            String header = requestBody.getString("Header");
+            String notes = requestBody.getString("Notes");
+            String longitude = requestBody.getString("Longitude");
+            String latitude = requestBody.getString("Latitude");
 
-            // Fetch Role Name based on Status
-            String fetchRoleSQL = "SELECT name FROM roles WHERE id = ?";
-            String roleName = null;
+             try {
+                // Insert new task submission
+                String insertSubmissionSQL = "INSERT INTO UserTaskSubmissions " +
+                        "(EmployeeTaskId, TaskDate, Achieved, Amount, VerificationStatus, Header, Notes, Longitude, Latitude, CreatedAt, UpdatedAt) " +
+                        "VALUES (?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
-            try (PreparedStatement psFetchRole = connection.prepareStatement(fetchRoleSQL)) {
-                psFetchRole.setInt(1, Integer.parseInt(user_type));
-                ResultSet rsRole = psFetchRole.executeQuery();
-                if (rsRole.next()) {
-                    roleName = rsRole.getString("name");
-                } else {
-                    response.put("responseCode", "999")
-                            .put("responseDescription", "Error: Role ID not found.");
-                    message.reply(response);
-                    return;
+                try (PreparedStatement psInsert = connection.prepareStatement(insertSubmissionSQL)) {
+                    psInsert.setString(1, employeeTaskId);
+                    psInsert.setInt(2, achieved);
+                    psInsert.setDouble(3, amount);
+                    psInsert.setInt(4, verificationstatus);
+                    psInsert.setString(5, header);
+                    psInsert.setString(6, notes);
+                    psInsert.setString(7, longitude);
+                    psInsert.setString(8, latitude);
+                    psInsert.executeUpdate();
                 }
-            }
+                
+                 response.put("responseCode", "000")
+                    .put("responseDescription", "Task submitted successfully");
 
-            // Handle escalation logic based on role
-            if ("RO".equals(roleName)) {
-                // Check if the RO is escalating to themselves
-                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
-                    // If RO is escalating to themselves, they should receive the SMS and Email
-                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
-                } else {
-                    // If RO escalates to their BM, we need to get the BM's details.
-                    String fetchBMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
-                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
-                            + " WHERE r.name = 'BM' AND ub.BranchId = ?";
 
-                    try (PreparedStatement psFetchBM = connection.prepareStatement(fetchBMDetailsSQL)) {
-                        psFetchBM.setString(1, user_branch_id);  // fetch BM based on RO's BranchId
-                        ResultSet rsBM = psFetchBM.executeQuery();
-                        if (rsBM.next()) {
-                            String bmEmail = rsBM.getString("email");
-                            String bmPhoneNumber = rsBM.getString("phone_number");
-                            String bmName = rsBM.getString("Name");
+//                // Update AchievedTarget in ProgressiveTracking
+//                String updateProgressSQL = "UPDATE ProgressiveTracking " +
+//                        "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
+//                        "WHERE EmployeeTaskId = ? AND TaskDate = CAST(GETDATE() AS DATE)";
+//
+//                try (PreparedStatement psUpdate = connection.prepareStatement(updateProgressSQL)) {
+//                    psUpdate.setString(1, employeeTaskId);
+//                    int rowsUpdated = psUpdate.executeUpdate();
+//
+//                    if (rowsUpdated == 0) {
+//                        // If no row exists for today, find the next closest future TaskDate
+//                        String closestFutureSQL = "SELECT TOP 1 Id FROM ProgressiveTracking " +
+//                                "WHERE TaskDate > CAST(GETDATE() AS DATE) AND EmployeeTaskId = ? ORDER BY TaskDate ASC";
+//
+//                        try (PreparedStatement psClosest = connection.prepareStatement(closestFutureSQL)) {
+//                            psClosest.setString(1, employeeTaskId);
+//                            ResultSet rs = psClosest.executeQuery();
+//
+//                            if (rs.next()) {
+//                                String closestTaskId = rs.getString("Id");
+//
+//                                String updateClosestSQL = "UPDATE ProgressiveTracking " +
+//                                        "SET AchievedTarget = AchievedTarget + 1, UpdatedAt = GETDATE() " +
+//                                        "WHERE Id = ?";
+//
+//                                try (PreparedStatement psUpdateClosest = connection.prepareStatement(updateClosestSQL)) {
+//                                    psUpdateClosest.setString(1, closestTaskId);
+//                                    psUpdateClosest.executeUpdate();
+//                                }
+//                                response.put("responseCode", "000")
+//                                        .put("responseDescription", "No suitable TaskDate found for updating AchievedTarget");
+//                                message.reply(response);
+//                                
+//                            } else {
+//                                response.put("responseCode", "999")
+//                                        .put("responseDescription", "No suitable TaskDate found for updating AchievedTarget");
+//                                message.reply(response);
+//                                return;
+//                            }
+//                        }
+//                    }
+//                }
 
-                            // Send escalation notifications to BM
-                            sendEscalationNotification(bmEmail, bmPhoneNumber, bmName, header, notes);
-                        } else {
-                            response.put("responseCode", "999")
-                                    .put("responseDescription", "Error: Branch Manager not found for the given RO.");
-                            message.reply(response);
-                            return;
-                        }
+                // Fetch Role Name based on Status
+                String fetchRoleSQL = "SELECT name FROM roles WHERE id = ?";
+                String roleName = null;
+
+                try (PreparedStatement psFetchRole = connection.prepareStatement(fetchRoleSQL)) {
+                    psFetchRole.setInt(1, Integer.parseInt(user_type));
+                    ResultSet rsRole = psFetchRole.executeQuery();
+                    if (rsRole.next()) {
+                        roleName = rsRole.getString("name");
+                    } else {
+                        response.put("responseCode", "999")
+                                .put("responseDescription", "Error: Role ID not found.");
+                        message.reply(response);
+                        return;
                     }
                 }
-                
-                response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted" + ("RO".equals(roleName) ? " and escalated" : "") + " successfully");
-                
-            } else if ("BM".equals(roleName)){
-              
-                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
-                    // If BM is escalating to themselves, they should receive the SMS and Email
-                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
-                } else {
-                    String fetchAMDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
-                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
-                            + " WHERE r.name = 'AM' AND ub.BranchId = ?";
 
-                    try (PreparedStatement psFetchAM = connection.prepareStatement(fetchAMDetailsSQL)) {
-                        psFetchAM.setString(1, user_branch_id);  
-                        ResultSet rsAM = psFetchAM.executeQuery();
-                        if (rsAM.next()) {
-                            String amEmail = rsAM.getString("email");
-                            String amPhoneNumber = rsAM.getString("phone_number");
-                            String amName = rsAM.getString("Name");
-
-                            // Send escalation notifications to BM
-                            sendEscalationNotification(amEmail, amPhoneNumber, amName, header, notes);
-                        } else {
-                            response.put("responseCode", "999")
-                                    .put("responseDescription", "Error: AM not found for the given Branch Manager.");
-                            message.reply(response);
-                            return;
-                        }
-                    }
-                }
-                
-                response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted" + ("BM".equals(roleName) ? " and escalated" : "") + " successfully");
-
-            }else if ("AM".equals(roleName)){
-              
-                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
-                    // If AM is escalating to themselves, they should receive the SMS and Email
-                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
-                } else {
-                    String fetchChiefDetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
-                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
-                            + " WHERE r.name = 'Chief' AND ub.BranchId = ?";
-
-                    try (PreparedStatement psFetchChief = connection.prepareStatement(fetchChiefDetailsSQL)) {
-                        psFetchChief.setString(1, user_branch_id);  
-                        ResultSet rsChief = psFetchChief.executeQuery();
-                        if (rsChief.next()) {
-                            String chiefEmail = rsChief.getString("email");
-                            String chiefPhoneNumber = rsChief.getString("phone_number");
-                            String chiefName = rsChief.getString("Name");
-
-                            // Send escalation notifications to BM
-                            sendEscalationNotification(chiefEmail, chiefPhoneNumber, chiefName, header, notes);
-                        } else {
-                            response.put("responseCode", "999")
-                                    .put("responseDescription", "Error: Chief not found for the given Area Manager.");
-                            message.reply(response);
-                            return;
-                        }
-                    }
-                }
-                
-                response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted" + ("AM".equals(roleName) ? " and escalated" : "") + " successfully");
-
-            }else if ("Chief".equals(roleName)){
-              
-                if (escalatedToUserUUID != null && escalatedToUserUUID.equals(user_uuid)) {
-                    // If RO is escalating to themselves, they should receive the SMS and Email
-                    sendEscalationNotification(escalatedToEmail, escalatedToPhoneNumber, escalatedToName, header, notes);
-                } else {
-                    String fetchCEODetailsSQL = "SELECT u.email, u.phone_number, u.first_name + ' ' + u.last_name AS Name FROM users u INNER JOIN roles r ON u.type = r.id "
-                            + "INNER JOIN usersBranches ub ON ub.UserId = u.uuid "
-                            + " WHERE r.name = 'CEO' AND ub.BranchId = ?";
-
-                    try (PreparedStatement psFetchCEO = connection.prepareStatement(fetchCEODetailsSQL)) {
-                        psFetchCEO.setString(1, user_branch_id);  
-                        ResultSet rsCEO = psFetchCEO.executeQuery();
-                        if (rsCEO.next()) {
-                            String CEOEmail = rsCEO.getString("email");
-                            String CEOPhoneNumber = rsCEO.getString("phone_number");
-                            String CEOName = rsCEO.getString("Name");
-
-                            // Send escalation notifications to BM
-                            sendEscalationNotification(CEOEmail, CEOPhoneNumber, CEOName, header, notes);
-                        } else {
-                            response.put("responseCode", "999")
-                                    .put("responseDescription", "Error: CEO not found for the given Chief.");
-                            message.reply(response);
-                            return;
-                        }
-                    }
-                }
-                
-                response.put("responseCode", "000")
-                    .put("responseDescription", "Task submitted" + ("Chief".equals(roleName) ? " and escalated" : "") + " successfully");
-
-            }
-        } catch (Exception e) {
+             } catch (Exception e) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            dbConnection.closeConn();
+            dbConnection.closeConn(); // Ensures connection is properly closed
+          }
         }
 
         message.reply(response);

@@ -64,8 +64,8 @@ public class subtasks extends AbstractVerticle{
             return;
         }
 
-        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [BranchId], [Frequency], [Verification], [CreatedAt], [UpdatedAt]) " +
-                "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [BranchId], [Frequency], [Verification], [isMultiple], [CreatedAt], [UpdatedAt]) " +
+                "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
         try (PreparedStatement prCreateSubtask = connection.prepareStatement(createSubtaskSQL)) {
             
@@ -77,7 +77,8 @@ public class subtasks extends AbstractVerticle{
                 String name = subtask.getString("name");
                 String frequency = subtask.getString("frequency");
                 String verification = subtask.getString("verification");
-
+                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
+                
                 if (objectiveId == null || name == null || branchId == null) {
                     response.put("responseCode", "999")
                             .put("responseDescription", "Error! ObjectiveId, Name and BranchId are required for each subtask.");
@@ -90,6 +91,7 @@ public class subtasks extends AbstractVerticle{
                 prCreateSubtask.setString(3, branchId);
                 prCreateSubtask.setString(4, frequency);
                 prCreateSubtask.setInt(5, Integer.parseInt(verification));
+                prCreateSubtask.setBoolean(6, isMultiple);
                 prCreateSubtask.addBatch();
             }
 
@@ -170,6 +172,7 @@ public class subtasks extends AbstractVerticle{
                     .put("BranchId", rs.getString("BranchId"))
                     .put("Frequency", rs.getString("Frequency"))
                     .put("Verification", String.valueOf(rs.getInt("Verification")))
+                    .put("isMultiple", rs.getBoolean("isMultiple"))
                     .put("CreatedAt", rs.getString("CreatedAt"))
                     .put("UpdatedAt", rs.getString("UpdatedAt"));
 
@@ -230,6 +233,7 @@ public class subtasks extends AbstractVerticle{
                         .put("ObjectiveName", rs.getString("ObjectiveName"))
                         .put("Frequency", rs.getString("Frequency"))
                         .put("Verification", String.valueOf(rs.getInt("Verification")))
+                        .put("isMultiple", rs.getBoolean("isMultiple"))
                         .put("BranchId", rs.getString("BranchId")) 
                         .put("BranchName", rs.getString("BranchName")) 
                         .put("CreatedAt", rs.getString("CreatedAt"))
@@ -267,6 +271,7 @@ public class subtasks extends AbstractVerticle{
         String frequency = requestBody.getString("Frequency");
         String verification = requestBody.getString("Verification");
         String BranchId = requestBody.getString("BranchId");
+        Boolean isMultiple = requestBody.getBoolean("isMultiple", false);
 
         if (id == null || id.isEmpty()) {
             response.put("responseCode", "999")
@@ -286,7 +291,8 @@ public class subtasks extends AbstractVerticle{
             prUpdateSubtask.setString(2, frequency);
             prUpdateSubtask.setInt(3, Integer.parseInt(verification));
             prUpdateSubtask.setString(4, BranchId);
-            prUpdateSubtask.setString(5, id);
+            prUpdateSubtask.setBoolean(5, isMultiple); 
+            prUpdateSubtask.setString(6, id);
 
             int rowsAffected = prUpdateSubtask.executeUpdate();
 
@@ -351,6 +357,7 @@ public class subtasks extends AbstractVerticle{
                        .put("BranchId", rs.getString("BranchId"))
                        .put("Frequency", rs.getString("Frequency"))
                        .put("Verification", rs.getString("Verification"))
+                       .put("isMultiple", rs.getBoolean("isMultiple"))
                        .put("CreatedAt", rs.getString("CreatedAt"))
                        .put("UpdatedAt", rs.getString("UpdatedAt"));                                 
                 result.add(jo);
@@ -410,6 +417,7 @@ public class subtasks extends AbstractVerticle{
                         .put("RoleName", rs.getString("RoleName"))
                         .put("Frequency", rs.getString("Frequency"))
                         .put("Verification", String.valueOf(rs.getInt("Verification")))
+                        .put("isMultiple", rs.getBoolean("isMultiple"))
                         .put("CreatedAt", rs.getString("CreatedAt"))
                         .put("UpdatedAt", rs.getString("UpdatedAt"));
 

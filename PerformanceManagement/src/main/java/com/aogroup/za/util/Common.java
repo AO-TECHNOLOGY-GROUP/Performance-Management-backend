@@ -16,6 +16,10 @@ import log.Logging;
  */
 public class Common {
 
+    public static String T24_IP = null;
+    public static String T24_PORT = null;
+    
+    
     public static String generateRandom(int length) {
         Random random = new Random();
         char[] digits = new char[length];

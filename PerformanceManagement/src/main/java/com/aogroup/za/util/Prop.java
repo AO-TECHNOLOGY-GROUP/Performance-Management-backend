@@ -40,6 +40,14 @@ public final class Prop {
     private transient String EMAIL_PORT;
     private transient String EMAIL_HOST;
 
+    
+    private transient String T24_IP;
+    private transient String T24_PORT;
+    private transient String COMPANY_NAME;
+    private transient String COMPANY_PASSWORD;
+    private transient String COMPANY_USERNAME;
+    private transient String AGRI_IP;
+    private transient String AGRI_PORT;
     /**
      * Instantiates a new Props.
      */
@@ -77,6 +85,16 @@ public final class Prop {
             EMAIL_PORT = readString("SMTP_PORT").trim();
             EMAIL_PASSWORD = readString("EMAIL_PASSWORD").trim();
             EMAIL_SENDER = readString("EMAIL_SENDER").trim();
+            
+            T24_IP = readString("T24_IP").trim();
+            T24_PORT = readString("T24_PORT").trim();
+            COMPANY_NAME = readString("COMPANY_NAME").trim();
+            COMPANY_PASSWORD = ency.decrypt(readString("COMPANY_PASSWORD").trim());
+            COMPANY_USERNAME = readString("COMPANY_USERNAME").trim();
+            AGRI_IP = readString("AGRI_IP").trim();
+            AGRI_PORT = readString("AGRI_PORT").trim();
+
+           
 
 
         } catch (IOException ex) {
@@ -250,6 +268,34 @@ public final class Prop {
 
     public String getEMAIL_PASSWORD() {
         return EMAIL_PASSWORD;
+    }
+
+    public String getT24_IP() {
+        return T24_IP;
+    }
+
+    public String getT24_PORT() {
+        return T24_PORT;
+    }
+    
+    public String getCOMPANY_NAME() {
+        return COMPANY_NAME;
+    }
+
+    public String getCOMPANY_PASSWORD() {
+        return COMPANY_PASSWORD;
+    }
+
+    public String getCOMPANY_USERNAME() {
+        return COMPANY_USERNAME;
+    }
+
+    public String getAGRI_IP() {
+        return AGRI_IP;
+    }
+
+    public String getAGRI_PORT() {
+        return AGRI_PORT;
     }
 
 }
