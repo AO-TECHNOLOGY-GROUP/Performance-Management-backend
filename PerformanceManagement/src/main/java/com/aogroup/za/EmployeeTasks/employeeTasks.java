@@ -47,6 +47,9 @@ public class employeeTasks extends AbstractVerticle{
         eventBus.consumer("UPDATEPROGRESSIVETRACKING", this::updateProgressiveTracking);
         eventBus.consumer("FETCH_ROS_BY_BRANCH_MANAGER", this::fetchROsByBranchManager);
         eventBus.consumer("FETCH_USER_SUBTASKS_WITH_TARGETS", this::fetchUserSubtasksWithTargets);
+        eventBus.consumer("FETCHUSERSPERROLE", this::fetchUsersByRole);
+        eventBus.consumer("FETCHUSERSBYBRANCH", this::fetchUsersByBranch);
+
     }
     
     private void assigningTargets(Message<JsonObject> message) {
@@ -534,6 +537,132 @@ public class employeeTasks extends AbstractVerticle{
                     .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
         } finally {
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+
+    private void fetchUsersByRole(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
+
+        JsonObject requestBody = message.body();
+        String roleName = requestBody.getString("RoleName");
+
+        try {
+            // Validate input
+            if (roleName == null || roleName.isEmpty()) {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Role name is required");
+                message.reply(response);
+                return;
+            }
+
+            // Fetch users by role name
+            String fetchUsersQuery = "SELECT u.id AS UserId, " +
+                                     "u.first_name + ' ' + u.last_name AS Name, " +
+                                     "u.email AS Email, " +
+                                     "u.uuid AS UUID, " +
+                                     "u.phone_number AS PhoneNumber, " +
+                                     "u.branch AS Branch " + 
+                                     "FROM users u " +
+                                     "JOIN roles r ON u.type = r.id " +  // Join with roles table
+                                     "WHERE r.name = ?";  // Use role name instead of role ID
+
+            JsonArray userList = new JsonArray();
+            try (PreparedStatement psUsers = connection.prepareStatement(fetchUsersQuery)) {
+                psUsers.setString(1, roleName);
+                ResultSet rs = psUsers.executeQuery();
+                while (rs.next()) {
+                    JsonObject userData = new JsonObject()
+                            .put("UserId", rs.getString("UserId"))
+                            .put("Name", rs.getString("Name"))
+                            .put("UUID", rs.getString("UUID"))
+                            .put("Email", rs.getString("Email"))
+                            .put("PhoneNumber", rs.getString("PhoneNumber"))
+                            .put("Branch", rs.getString("Branch"));
+                    userList.add(userData);
+                }
+            }
+
+            // Debugging: Check number of users retrieved
+            System.out.println("Total users found for role " + roleName + ": " + userList.size());
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success")
+                    .put("Users", userList);
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn(); // Ensures connection is properly closed
+        }
+
+        message.reply(response);
+    }
+
+    private void fetchUsersByBranch(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
+
+        JsonObject requestBody = message.body();
+        String branchId = requestBody.getString("branchId");
+
+        // Check if branchId is provided
+        if (branchId == null || branchId.isEmpty()) {
+            response.put("responseCode", "400")
+                    .put("responseDescription", "Error! branchId is required.");
+            message.reply(response);
+            return;
+        }
+
+        // SQL query to fetch users by branchId
+        String fetchUsersQuery = "SELECT * FROM [Performance_Management].[dbo].[usersBranches] WHERE [BranchId] = ?";
+
+        try (PreparedStatement fetchUsersStmt = connection.prepareStatement(fetchUsersQuery)) {
+            fetchUsersStmt.setString(1, branchId);
+
+            ResultSet resultSet = fetchUsersStmt.executeQuery();
+
+            JsonArray usersArray = new JsonArray();
+
+            // Loop through the result set and build the response
+            while (resultSet.next()) {
+                JsonObject user = new JsonObject();
+                user.put("id", resultSet.getString("Id"));
+                user.put("userId", resultSet.getString("UserId"));
+                user.put("branchId", resultSet.getString("BranchId"));
+                user.put("createdDate", resultSet.getString("CreatedDate"));
+
+                usersArray.add(user);
+            }
+
+            // Check if users were found
+            if (usersArray.isEmpty()) {
+                response.put("responseCode", "404")
+                        .put("responseDescription", "No users found for the provided branch ID.");
+            } else {
+                response.put("responseCode", "000")
+                        .put("responseDescription", "Success! Users fetched successfully.")
+                        .put("users", usersArray);
+            }
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
             dbConnection.closeConn();
         }
 

@@ -50,16 +50,14 @@ public class objectives extends AbstractVerticle{
 
         JsonObject requestBody = message.body();
 
-        
         JsonArray name = requestBody.getJsonArray("Name");
         String role = requestBody.getString("Role");
-        JsonArray target = requestBody.getJsonArray("Target");
         String periodStart = requestBody.getString("PeriodStart");
         String periodEnd = requestBody.getString("PeriodEnd");
 
-        String createObjectiveSQL = "INSERT INTO [dbo].[Objectives] ([Id], [Name], [Role], [Target] "
+        String createObjectiveSQL = "INSERT INTO [dbo].[Objectives] ([Id], [Name], [Role]"
             + ",[PeriodStart],[PeriodEnd], [CreatedAt], [UpdatedAt])"
-            + " VALUES (NEWID(),?,?,?,?,?,GETDATE(),GETDATE())";
+            + " VALUES (NEWID(),?,?,?,?,GETDATE(),GETDATE())";
         
         
         try (PreparedStatement prCreateObjectives = connection.prepareStatement(createObjectiveSQL, PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -69,9 +67,9 @@ public class objectives extends AbstractVerticle{
 
                prCreateObjectives.setString(1, name.getString(x));
                prCreateObjectives.setString(2, role);
-               prCreateObjectives.setString(3, target.getString(x));
-               prCreateObjectives.setString(4, periodStart);
-               prCreateObjectives.setString(5, periodEnd);
+//               prCreateObjectives.setString(3, target.getString(x));
+               prCreateObjectives.setString(3, periodStart);
+               prCreateObjectives.setString(4, periodEnd);
                prCreateObjectives.addBatch();
             }
         
@@ -119,7 +117,7 @@ public class objectives extends AbstractVerticle{
                            .put("Id", allObjectives.getString("Id"))
                            .put("Name", allObjectives.getString("Name"))
                            .put("Role", allObjectives.getString("Role"))
-                           .put("Target", allObjectives.getString("Target"))
+//                           .put("Target", allObjectives.getString("Target"))
                            .put("RoleName", allObjectives.getString("RoleName"))
                            .put("PeriodStart", allObjectives.getString("PeriodStart"))
                            .put("PeriodEnd", allObjectives.getString("PeriodEnd"))
@@ -235,7 +233,7 @@ public class objectives extends AbstractVerticle{
                            .put("Id", rs.getString("Id"))
                            .put("Name", rs.getString("Name"))
                            .put("Role", rs.getString("Role"))
-                           .put("Target", rs.getString("Target"))
+//                           .put("Target", rs.getString("Target"))
                            .put("PeriodStart", rs.getString("PeriodStart"))
                            .put("PeriodEnd", rs.getString("PeriodEnd"))
                            .put("CreatedAt", rs.getString("CreatedAt"))

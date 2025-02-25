@@ -45,6 +45,7 @@ public class subtasks extends AbstractVerticle{
         eventBus.consumer("UPDATESUBTASKS", this::updateSubtasks); 
         eventBus.consumer("FETCHSUBTASKBYROLE", this::fetchSubtasksByRole);
         eventBus.consumer("FETCHSUBTASKBYBRANCH", this::fetchSubtasksByBranch);
+        eventBus.consumer("FETCHSUBTASKSBYISMULTIPLE", this::fetchSubtasksByIsMultiple);
     }
     
     private void creatingSubtask(Message<JsonObject> message) {
@@ -77,8 +78,10 @@ public class subtasks extends AbstractVerticle{
                 String name = subtask.getString("name");
                 String frequency = subtask.getString("frequency");
                 String verification = subtask.getString("verification");
-                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
-                
+                String isMultipleStr = subtask.getString("isMultiple", "0");
+//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
+                Boolean isMultiple = "1".equals(isMultipleStr);
+               
                 if (objectiveId == null || name == null || branchId == null) {
                     response.put("responseCode", "999")
                             .put("responseDescription", "Error! ObjectiveId, Name and BranchId are required for each subtask.");
@@ -91,7 +94,7 @@ public class subtasks extends AbstractVerticle{
                 prCreateSubtask.setString(3, branchId);
                 prCreateSubtask.setString(4, frequency);
                 prCreateSubtask.setInt(5, Integer.parseInt(verification));
-                prCreateSubtask.setBoolean(6, isMultiple);
+                prCreateSubtask.setBoolean(6, isMultiple); // Set boolean value for isMultiple
                 prCreateSubtask.addBatch();
             }
 
@@ -442,4 +445,73 @@ public class subtasks extends AbstractVerticle{
 
         message.reply(response);
     }
+    
+    private void fetchSubtasksByIsMultiple(Message<JsonObject> message) {
+    JsonObject response = new JsonObject();
+    DBConnection dbConnection = new DBConnection();
+    JsonArray result = new JsonArray();
+
+    JsonObject requestBody = message.body();
+
+    // Convert isMultiple from String to int
+    int isMultiple;
+    try {
+        isMultiple = Integer.parseInt(requestBody.getString("isMultiple"));
+        if (isMultiple != 0 && isMultiple != 1) {
+            throw new NumberFormatException("isMultiple must be 0 or 1");
+        }
+    } catch (NumberFormatException e) {
+        response.put("responseCode", "999")
+                .put("responseDescription", "Error! isMultiple must be 0 or 1.");
+        message.reply(response);
+        return;
+    }
+
+    // SQL Query
+    String query = "SELECT S.*, o.Name AS ObjectiveName, r.name AS RoleName FROM [dbo].[Subtasks] S " +
+                   "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId " +
+                   "INNER JOIN [dbo].[roles] r ON o.Role = r.id " +
+                   "WHERE S.isMultiple = ?";
+
+    try (Connection connection = dbConnection.getConnection();
+         PreparedStatement prFetch = connection.prepareStatement(query)) {
+
+        prFetch.setInt(1, isMultiple);
+        ResultSet rs = prFetch.executeQuery();
+
+        while (rs.next()) {
+            JsonObject subtask = new JsonObject()
+                    .put("Id", rs.getString("Id"))
+                    .put("ObjectiveId", rs.getString("ObjectiveId"))
+                    .put("ObjectiveName", rs.getString("ObjectiveName"))
+                    .put("Name", rs.getString("Name"))
+                    .put("RoleName", rs.getString("RoleName"))
+                    .put("Frequency", rs.getString("Frequency"))
+                    .put("Verification", String.valueOf(rs.getInt("Verification")))
+                    .put("isMultiple", rs.getBoolean("isMultiple"))
+                    .put("CreatedAt", rs.getString("CreatedAt"))
+                    .put("UpdatedAt", rs.getString("UpdatedAt"));
+
+            result.add(subtask);
+        }
+    } catch (Exception e) {
+        response.put("responseCode", "999")
+                .put("responseDescription", "Database error: " + e.getMessage());
+        e.printStackTrace();
+    } finally {
+        dbConnection.closeConn();
+    }
+
+    if (result.size() > 0) {
+        response.put("responseCode", "000")
+                .put("responseDescription", "Subtasks fetched successfully.")
+                .put("data", result);
+    } else {
+        response.put("responseCode", "999")
+                .put("responseDescription", "No subtasks found for the given isMultiple value.");
+    }
+
+    message.reply(response);
+}
+
 }

@@ -1,12 +1,14 @@
 package com.co.ke.main;
 
 
+import com.aogroup.za.Channels.channels;
 import com.aogroup.za.DashboardResults.dashboardResults;
 import com.aogroup.za.EmployeeTasks.employeeTasks;
 //import com.aogroup.za.FetchBalance.fetchbalance;
 import com.aogroup.za.UserInteraction.UserInteraction;
 import com.aogroup.za.Objectives.objectives;
 import com.aogroup.za.Subtasks.subtasks;
+import com.aogroup.za.Transactions.SMETransactions;
 import com.aogroup.za.adaptors.ESBRouter;
 import com.aogroup.za.adaptors.EmailAdaptor;
 import com.aogroup.za.adaptors.Integrator;
@@ -29,6 +31,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import java.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import timetasks.ConfirmDeposits;
 
 
 /**
@@ -67,6 +70,13 @@ public class EntryPoint extends AbstractVerticle {
     public static String AGRI_IP;
     public static String AGRI_PORT;
     
+    public static String MOCASH_DATABASE_IP;
+    public static String MOCASH_DATABASE_NAME;
+    public static String MOCASH_DATABASE_USER;
+    public static String MOCASH_DATABASE_PASSWORD;
+    public static String ENCRYPTED_SMS_ENDPOINT;
+
+    
     // Hikari Setup
     static int MAX_POOL_SIZE = 3;
     static int MAX_IDLE_TIME = 4;
@@ -100,6 +110,13 @@ public class EntryPoint extends AbstractVerticle {
         COMPANY_NAME = "";
         COMPANY_PASSWORD = "";
         COMPANY_USERNAME = "";
+        
+        //Mocash
+        MOCASH_DATABASE_IP = "";
+        MOCASH_DATABASE_NAME = "";
+        MOCASH_DATABASE_USER = "";
+        MOCASH_DATABASE_PASSWORD = "";
+        ENCRYPTED_SMS_ENDPOINT = "";
     }
 
     public static void main(String[] args) {
@@ -135,6 +152,12 @@ public class EntryPoint extends AbstractVerticle {
         AGRI_IP = props.getAGRI_IP();
         AGRI_PORT = props.getAGRI_PORT();
         
+        MOCASH_DATABASE_IP = props.getMOCASH_DATABASE_IP();
+        MOCASH_DATABASE_NAME = props.getMOCASH_DATABASE_NAME();
+        MOCASH_DATABASE_USER = props.getMOCASH_DATABASE_USER();
+        MOCASH_DATABASE_PASSWORD = props.getMOCASH_DATABASE_PASSWORD();
+
+        
     
         // Deployment options
         DeploymentOptions options = new DeploymentOptions()
@@ -156,7 +179,13 @@ public class EntryPoint extends AbstractVerticle {
         vertx.deployVerticle(UserAuth.class.getName(), options);
         vertx.deployVerticle(UserInteraction.class.getName(), options);
         vertx.deployVerticle(dashboardResults.class.getName(), options);
+        vertx.deployVerticle(SMETransactions.class.getName(), options);
+        vertx.deployVerticle(channels.class.getName(), options);
 //        vertx.deployVerticle(fetchbalance.class.getName(), options);
+
+        ConfirmDeposits diodays = new ConfirmDeposits (vertx);
+        Timer diodaysSched = new Timer();
+        diodaysSched.schedule(diodays, 0, 24 * 60 * 60 * 1000); // Runs every 24 hours
           }
 
     @Override
