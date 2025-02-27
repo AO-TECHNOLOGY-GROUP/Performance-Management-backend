@@ -8,12 +8,14 @@ package com.aogroup.za.adaptors;
 import com.aogroup.za.branch.BranchUtil;
 import com.aogroup.za.datasource.DBConnection;
 import com.aogroup.za.makerchecker.MakerCheckerUtil;
+import com.aogroup.za.reports.ReportsUtil;
 import com.aogroup.za.user.UserUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import log.Logging;
 import org.slf4j.Logger;
@@ -48,6 +50,10 @@ public class ESBRouter extends AbstractVerticle {
         eventBus.consumer("113000", this::fetchBranch);
        
         
+        eventBus.consumer("501000", this::createReportCategories);
+        eventBus.consumer("502000", this::createReports);
+        eventBus.consumer("503000", this::fetchAllReports);
+        eventBus.consumer("504000", this::fetchAllReportCategories);
     }
 
     private void createBranch(Message<JsonObject> message) {
@@ -268,5 +274,108 @@ public class ESBRouter extends AbstractVerticle {
         message.reply(response);
     }
     
+    private void createReportCategories(Message<JsonObject> message) {
+        JsonObject data = message.body();
+        JsonObject response = new JsonObject();
+        ReportsUtil rUtil = new ReportsUtil();
+        
+        MultiMap headers = message.headers();
+        if (headers.isEmpty()) {
+            //System.out.println("empty Header");
+            message.fail(666, "Unauthenticated User");
+            return;
+        }
+        
+        String user = headers.get("user");
+        
+        data.put("user", user);
+        
+        int i = rUtil.createReportCategory(data);
+        
+        if (i != 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Successfully created report category.");
+        } else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to create report category.");
+        }
+ 
+        message.reply(response);
+    }
+
+    private void createReports(Message<JsonObject> message) {
+        JsonObject data = message.body();
+        JsonObject response = new JsonObject();
+        ReportsUtil rUtil = new ReportsUtil();
+        
+        MultiMap headers = message.headers();
+        if (headers.isEmpty()) {
+            //System.out.println("empty Header");
+            message.fail(666, "Unauthenticated User");
+            return;
+        }
+        
+        String user = headers.get("user");
+        
+        data.put("user", user);
+        
+        int i = rUtil.createReport(data);
+        
+        if (i != 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Successfully created report.");
+        } else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to create report.");
+        }
+        
+        message.reply(response);
+    }
+
+    private void fetchAllReports(Message<JsonObject> message) {
+        JsonObject data = message.body();
+        ReportsUtil rUtil = new ReportsUtil();
+        JsonObject response = new JsonObject();
+        
+        JsonArray reports = rUtil.fetchReports();
+        
+        if (reports.size() > 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Successfully fetched all reports.")
+                    .put("data", reports);
+        } else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to fetch reports.");
+        }
+        
+        message.reply(response);
+    }
+
+    private void fetchAllReportCategories(Message<JsonObject> message) {
+        JsonObject data = message.body();
+        ReportsUtil rUtil = new ReportsUtil();
+        JsonObject response = new JsonObject();
+        
+        JsonArray reportCategories = rUtil.fetchReportCategories();
+        
+        if (reportCategories.size() > 0) {
+            response
+                    .put("responseCode", "000")
+                    .put("responseDescription", "Successfully fetched all report categories.")
+                    .put("data", reportCategories);
+        } else {
+            response
+                    .put("responseCode", "999")
+                    .put("responseDescription", "Failed to fetch report categories.");
+        }
+        
+        message.reply(response);
+    }
 
 }

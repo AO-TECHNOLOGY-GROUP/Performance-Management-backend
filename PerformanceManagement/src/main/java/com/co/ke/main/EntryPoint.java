@@ -2,6 +2,7 @@ package com.co.ke.main;
 
 
 import com.aogroup.za.Channels.channels;
+import com.aogroup.za.Checklist.checklists;
 import com.aogroup.za.DashboardResults.dashboardResults;
 import com.aogroup.za.EmployeeTasks.employeeTasks;
 //import com.aogroup.za.FetchBalance.fetchbalance;
@@ -181,6 +182,7 @@ public class EntryPoint extends AbstractVerticle {
         vertx.deployVerticle(dashboardResults.class.getName(), options);
         vertx.deployVerticle(SMETransactions.class.getName(), options);
         vertx.deployVerticle(channels.class.getName(), options);
+        vertx.deployVerticle(checklists.class.getName(), options);
 //        vertx.deployVerticle(fetchbalance.class.getName(), options);
 
         ConfirmDeposits diodays = new ConfirmDeposits (vertx);

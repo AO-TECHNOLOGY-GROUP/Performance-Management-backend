@@ -59,33 +59,33 @@ public class channels extends AbstractVerticle{
           
          int rowsAffected = prInsertChannel.executeUpdate();
 
-        if (rowsAffected > 0) {
-            connection.commit();
-            response.put("responseCode", "000");
-            response.put("responseDescription", "Success! Channel created successfully");
+            if (rowsAffected > 0) {
+                connection.commit();
+                response.put("responseCode", "000");
+                response.put("responseDescription", "Success! Channel created successfully");
 
-        } else {
-            connection.rollback();
-            response.put("responseCode", "999");
-            response.put("responseDescription", "Error! Channel creation failed");
-        }
-
-    } catch (Exception e) {
-        response.put("responseCode", "999");
-        response.put("responseDescription", "Database error: " + e.getMessage());
-        e.printStackTrace();
-    } finally {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
+            } else {
+                connection.rollback();
+                response.put("responseCode", "999");
+                response.put("responseDescription", "Error! Channel creation failed");
             }
+
+        } catch (Exception e) {
+            response.put("responseCode", "999");
+            response.put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            dbConnection.closeConn();
         }
-        dbConnection.closeConn();
+        message.reply(response);
     }
-    message.reply(response);
-}
 
     private void fetchChannel (Message<JsonObject> message){
         DBConnection dbConnection = new DBConnection();

@@ -48,6 +48,7 @@ public class employeeTasks extends AbstractVerticle{
         eventBus.consumer("FETCH_ROS_BY_BRANCH_MANAGER", this::fetchROsByBranchManager);
         eventBus.consumer("FETCH_USER_SUBTASKS_WITH_TARGETS", this::fetchUserSubtasksWithTargets);
         eventBus.consumer("FETCHUSERSPERROLE", this::fetchUsersByRole);
+        eventBus.consumer("FETCHUSERSBYROLEID", this::fetchUsersByRoleId);
         eventBus.consumer("FETCHUSERSBYBRANCH", this::fetchUsersByBranch);
 
     }
@@ -664,6 +665,83 @@ public class employeeTasks extends AbstractVerticle{
                 }
             }
             dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+
+    private void fetchUsersByRoleId(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        JsonObject requestBody = message.body();
+        String roleIdStr = requestBody.getString("RoleId");
+
+        // Validate input
+        if (roleIdStr == null || roleIdStr.isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Role ID is required");
+            message.reply(response);
+            return;
+        }
+
+        int roleId;
+        try {
+            roleId = Integer.parseInt(roleIdStr);
+        } catch (NumberFormatException e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Invalid Role ID format");
+            message.reply(response);
+            return;
+        }
+
+        JsonArray userList = new JsonArray();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = null;
+        PreparedStatement psUsers = null;
+        ResultSet rs = null;
+
+        try {
+            connection = dbConnection.getConnection();
+            String fetchUsersQuery = "SELECT u.id AS UserId, " +
+                                     "u.first_name + ' ' + u.last_name AS Name, " +
+                                     "u.email AS Email, " +
+                                     "u.uuid AS UUID, " +
+                                     "u.phone_number AS PhoneNumber, " +
+                                     "u.branch AS Branch " +
+                                     "FROM users u " +
+                                     "WHERE u.type = ?";
+
+            psUsers = connection.prepareStatement(fetchUsersQuery);
+            psUsers.setInt(1, roleId);
+            rs = psUsers.executeQuery();
+
+            while (rs.next()) {
+                JsonObject userData = new JsonObject()
+                        .put("UserId", rs.getString("UserId"))
+                        .put("Name", rs.getString("Name"))
+                        .put("UUID", rs.getString("UUID"))
+                        .put("Email", rs.getString("Email"))
+                        .put("PhoneNumber", rs.getString("PhoneNumber"))
+                        .put("Branch", rs.getString("Branch"));
+                userList.add(userData);
+            }
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success")
+                    .put("Users", userList);
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // Properly close resources to avoid memory leaks
+            try {
+                if (rs != null) rs.close();
+                if (psUsers != null) psUsers.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         message.reply(response);
