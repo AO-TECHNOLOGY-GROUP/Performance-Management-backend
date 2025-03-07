@@ -46,14 +46,8 @@ public final class Prop {
     private transient String COMPANY_NAME;
     private transient String COMPANY_PASSWORD;
     private transient String COMPANY_USERNAME;
-    private transient String AGRI_IP;
-    private transient String AGRI_PORT;
-    
-    private transient String MOCASH_DATABASE_IP;
-    private transient String MOCASH_DATABASE_NAME;
-    private transient String MOCASH_DATABASE_USER;
-    private transient String MOCASH_DATABASE_PASSWORD;
- 
+
+   
     /**
      * Instantiates a new Props.
      */
@@ -97,15 +91,7 @@ public final class Prop {
             COMPANY_NAME = readString("COMPANY_NAME").trim();
             COMPANY_PASSWORD = ency.decrypt(readString("COMPANY_PASSWORD").trim());
             COMPANY_USERNAME = readString("COMPANY_USERNAME").trim();
-            AGRI_IP = readString("AGRI_IP").trim();
-            AGRI_PORT = readString("AGRI_PORT").trim();
-
-            MOCASH_DATABASE_IP = readString("MOCASH_DATABASE_IP").trim();
-            MOCASH_DATABASE_NAME = readString("MOCASH_DATABASE_NAME").trim();
-            MOCASH_DATABASE_USER = ency.decrypt(readString("MOCASH_DATABASE_USER").trim());
-            MOCASH_DATABASE_PASSWORD = ency.decrypt(readString("MOCASH_DATABASE_PASSWORD").trim());
-
-
+           
 
         } catch (IOException ex) {
             Logger.getLogger(Prop.class.getName()).log(Level.SEVERE, "ERROR: Failed to load properties file.\nCause: \n", ex);
@@ -300,28 +286,6 @@ public final class Prop {
         return COMPANY_USERNAME;
     }
 
-    public String getAGRI_IP() {
-        return AGRI_IP;
-    }
-
-    public String getAGRI_PORT() {
-        return AGRI_PORT;
-    }
     
-    public String getMOCASH_DATABASE_IP() {
-        return MOCASH_DATABASE_IP;
-    }
-
-    public String getMOCASH_DATABASE_NAME() {
-        return MOCASH_DATABASE_NAME;
-    }
-
-    public String getMOCASH_DATABASE_USER() {
-        return MOCASH_DATABASE_USER;
-    }
-
-    public String getMOCASH_DATABASE_PASSWORD() {
-        return MOCASH_DATABASE_PASSWORD;
-    }
-
+   
 }

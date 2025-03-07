@@ -65,8 +65,8 @@ public class subtasks extends AbstractVerticle{
             return;
         }
 
-        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [BranchId], [Frequency], [Verification], [isMultiple], [CreatedAt], [UpdatedAt]) " +
-                "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+        String createSubtaskSQL = "INSERT INTO [dbo].[Subtasks] ([Id], [ObjectiveId], [Name], [BranchId], [Frequency], [Verification], [isMultiple], [Call], [CreatedAt], [UpdatedAt]) " +
+                "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
         try (PreparedStatement prCreateSubtask = connection.prepareStatement(createSubtaskSQL)) {
             
@@ -77,10 +77,28 @@ public class subtasks extends AbstractVerticle{
 
                 String name = subtask.getString("name");
                 String frequency = subtask.getString("frequency");
-                String verification = subtask.getString("verification");
+//                String verification = subtask.getString("verification");
+                
+                String verificationStr = subtask.getString("verification", "0");
+//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
+                Boolean verification = "1".equals(verificationStr);
+               
+                
                 String isMultipleStr = subtask.getString("isMultiple", "0");
 //                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
                 Boolean isMultiple = "1".equals(isMultipleStr);
+               
+                String CallStr = subtask.getString("Call", "0");
+//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
+                Boolean Call = "1".equals(CallStr);
+               
+                if (objectiveId == null || name == null || branchId == null) {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error! ObjectiveId, Name and BranchId are required for each subtask.");
+                    message.reply(response);
+                    return;
+                }
+                
                
                 if (objectiveId == null || name == null || branchId == null) {
                     response.put("responseCode", "999")
@@ -93,8 +111,10 @@ public class subtasks extends AbstractVerticle{
                 prCreateSubtask.setString(2, name);
                 prCreateSubtask.setString(3, branchId);
                 prCreateSubtask.setString(4, frequency);
-                prCreateSubtask.setInt(5, Integer.parseInt(verification));
+                prCreateSubtask.setBoolean(5, verification);
+//                prCreateSubtask.setInt(5, Integer.parseInt(verification));
                 prCreateSubtask.setBoolean(6, isMultiple); // Set boolean value for isMultiple
+                prCreateSubtask.setBoolean(7, Call);
                 prCreateSubtask.addBatch();
             }
 
@@ -174,8 +194,9 @@ public class subtasks extends AbstractVerticle{
                     .put("Name", rs.getString("Name"))
                     .put("BranchId", rs.getString("BranchId"))
                     .put("Frequency", rs.getString("Frequency"))
-                    .put("Verification", String.valueOf(rs.getInt("Verification")))
-                    .put("isMultiple", rs.getBoolean("isMultiple"))
+                    .put("Verification", rs.getBoolean("Verification") ? "1" : "0")
+                    .put("isMultiple", rs.getBoolean("isMultiple") ? "1" : "0")
+                    .put("Call", rs.getBoolean("Call") ? "1" : "0")
                     .put("CreatedAt", rs.getString("CreatedAt"))
                     .put("UpdatedAt", rs.getString("UpdatedAt"));
 
@@ -235,8 +256,9 @@ public class subtasks extends AbstractVerticle{
                         .put("ObjectiveId", rs.getString("ObjectiveId"))
                         .put("ObjectiveName", rs.getString("ObjectiveName"))
                         .put("Frequency", rs.getString("Frequency"))
-                        .put("Verification", String.valueOf(rs.getInt("Verification")))
-                        .put("isMultiple", rs.getBoolean("isMultiple"))
+                        .put("Verification", rs.getBoolean("Verification") ? "1" : "0")
+                        .put("isMultiple", rs.getBoolean("isMultiple") ? "1" : "0")
+                        .put("Call", rs.getBoolean("Call") ? "1" : "0")
                         .put("BranchId", rs.getString("BranchId")) 
                         .put("BranchName", rs.getString("BranchName")) 
                         .put("CreatedAt", rs.getString("CreatedAt"))
@@ -272,9 +294,10 @@ public class subtasks extends AbstractVerticle{
         String id = requestBody.getString("Id");
         String name = requestBody.getString("Name");
         String frequency = requestBody.getString("Frequency");
-        String verification = requestBody.getString("Verification");
+        Boolean verification = requestBody.getBoolean("Verification", false);
         String BranchId = requestBody.getString("BranchId");
         Boolean isMultiple = requestBody.getBoolean("isMultiple", false);
+        Boolean Call = requestBody.getBoolean("Call", false);
 
         if (id == null || id.isEmpty()) {
             response.put("responseCode", "999")
@@ -284,7 +307,7 @@ public class subtasks extends AbstractVerticle{
         }
 
         String updateSQL = "UPDATE [dbo].[Subtasks] " +
-                "SET [Name] = ?, [Frequency] = ?, [Verification] = ?, [UpdatedAt] = GETDATE() " +
+                "SET [Name] = ?, [Frequency] = ?, [Verification] = ?, [BranchId] = ?, [Call] = ?, [isMultiple], [UpdatedAt] = GETDATE() " +
                 "WHERE [Id] = ?";
 
         try (PreparedStatement prUpdateSubtask = connection.prepareStatement(updateSQL)) {
@@ -292,10 +315,12 @@ public class subtasks extends AbstractVerticle{
 
             prUpdateSubtask.setString(1, name);
             prUpdateSubtask.setString(2, frequency);
-            prUpdateSubtask.setInt(3, Integer.parseInt(verification));
+//            prUpdateSubtask.setInt(3, Integer.parseInt(verification));
+            prUpdateSubtask.setBoolean(3, verification);
             prUpdateSubtask.setString(4, BranchId);
             prUpdateSubtask.setBoolean(5, isMultiple); 
-            prUpdateSubtask.setString(6, id);
+            prUpdateSubtask.setBoolean(6, Call);
+            prUpdateSubtask.setString(7, id);
 
             int rowsAffected = prUpdateSubtask.executeUpdate();
 
@@ -359,8 +384,9 @@ public class subtasks extends AbstractVerticle{
                        .put("Name", rs.getString("Name"))
                        .put("BranchId", rs.getString("BranchId"))
                        .put("Frequency", rs.getString("Frequency"))
-                       .put("Verification", rs.getString("Verification"))
-                       .put("isMultiple", rs.getBoolean("isMultiple"))
+                       .put("Verification", rs.getBoolean("Verification") ? "1" : "0")
+                       .put("isMultiple", rs.getBoolean("isMultiple") ? "1" : "0")
+                       .put("Call", rs.getBoolean("Call") ? "1" : "0")
                        .put("CreatedAt", rs.getString("CreatedAt"))
                        .put("UpdatedAt", rs.getString("UpdatedAt"));                                 
                 result.add(jo);
@@ -419,8 +445,9 @@ public class subtasks extends AbstractVerticle{
                         .put("Name", rs.getString("Name"))
                         .put("RoleName", rs.getString("RoleName"))
                         .put("Frequency", rs.getString("Frequency"))
-                        .put("Verification", String.valueOf(rs.getInt("Verification")))
-                        .put("isMultiple", rs.getBoolean("isMultiple"))
+                        .put("Verification", rs.getBoolean("Verification") ? "1" : "0")
+                        .put("isMultiple", rs.getBoolean("isMultiple") ? "1" : "0")
+                        .put("Call", rs.getBoolean("Call") ? "1" : "0")
                         .put("CreatedAt", rs.getString("CreatedAt"))
                         .put("UpdatedAt", rs.getString("UpdatedAt"));
 
@@ -447,71 +474,72 @@ public class subtasks extends AbstractVerticle{
     }
     
     private void fetchSubtasksByIsMultiple(Message<JsonObject> message) {
-    JsonObject response = new JsonObject();
-    DBConnection dbConnection = new DBConnection();
-    JsonArray result = new JsonArray();
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        JsonArray result = new JsonArray();
 
-    JsonObject requestBody = message.body();
+        JsonObject requestBody = message.body();
 
-    // Convert isMultiple from String to int
-    int isMultiple;
-    try {
-        isMultiple = Integer.parseInt(requestBody.getString("isMultiple"));
-        if (isMultiple != 0 && isMultiple != 1) {
-            throw new NumberFormatException("isMultiple must be 0 or 1");
+        // Convert isMultiple from String to int
+        int isMultiple;
+        try {
+            isMultiple = Integer.parseInt(requestBody.getString("isMultiple"));
+            if (isMultiple != 0 && isMultiple != 1) {
+                throw new NumberFormatException("isMultiple must be 0 or 1");
+            }
+        } catch (NumberFormatException e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! isMultiple must be 0 or 1.");
+            message.reply(response);
+            return;
         }
-    } catch (NumberFormatException e) {
-        response.put("responseCode", "999")
-                .put("responseDescription", "Error! isMultiple must be 0 or 1.");
+
+        // SQL Query
+        String query = "SELECT S.*, o.Name AS ObjectiveName, r.name AS RoleName FROM [dbo].[Subtasks] S " +
+                       "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId " +
+                       "INNER JOIN [dbo].[roles] r ON o.Role = r.id " +
+                       "WHERE S.isMultiple = ?";
+
+        try (Connection connection = dbConnection.getConnection();
+             PreparedStatement prFetch = connection.prepareStatement(query)) {
+
+            prFetch.setInt(1, isMultiple);
+            ResultSet rs = prFetch.executeQuery();
+
+            while (rs.next()) {
+                JsonObject subtask = new JsonObject()
+                        .put("Id", rs.getString("Id"))
+                        .put("ObjectiveId", rs.getString("ObjectiveId"))
+                        .put("ObjectiveName", rs.getString("ObjectiveName"))
+                        .put("Name", rs.getString("Name"))
+                        .put("RoleName", rs.getString("RoleName"))
+                        .put("Frequency", rs.getString("Frequency"))
+                        .put("Verification", rs.getBoolean("Verification") ? "1" : "0")
+                        .put("isMultiple", rs.getBoolean("isMultiple") ? "1" : "0")
+                        .put("Call", rs.getBoolean("Call") ? "1" : "0")
+                        .put("CreatedAt", rs.getString("CreatedAt"))
+                        .put("UpdatedAt", rs.getString("UpdatedAt"));
+
+                result.add(subtask);
+            }
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            dbConnection.closeConn();
+        }
+
+        if (result.size() > 0) {
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Subtasks fetched successfully.")
+                    .put("data", result);
+        } else {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "No subtasks found for the given isMultiple value.");
+        }
+
         message.reply(response);
-        return;
     }
-
-    // SQL Query
-    String query = "SELECT S.*, o.Name AS ObjectiveName, r.name AS RoleName FROM [dbo].[Subtasks] S " +
-                   "INNER JOIN [dbo].[Objectives] o ON o.Id = S.ObjectiveId " +
-                   "INNER JOIN [dbo].[roles] r ON o.Role = r.id " +
-                   "WHERE S.isMultiple = ?";
-
-    try (Connection connection = dbConnection.getConnection();
-         PreparedStatement prFetch = connection.prepareStatement(query)) {
-
-        prFetch.setInt(1, isMultiple);
-        ResultSet rs = prFetch.executeQuery();
-
-        while (rs.next()) {
-            JsonObject subtask = new JsonObject()
-                    .put("Id", rs.getString("Id"))
-                    .put("ObjectiveId", rs.getString("ObjectiveId"))
-                    .put("ObjectiveName", rs.getString("ObjectiveName"))
-                    .put("Name", rs.getString("Name"))
-                    .put("RoleName", rs.getString("RoleName"))
-                    .put("Frequency", rs.getString("Frequency"))
-                    .put("Verification", String.valueOf(rs.getInt("Verification")))
-                    .put("isMultiple", rs.getBoolean("isMultiple"))
-                    .put("CreatedAt", rs.getString("CreatedAt"))
-                    .put("UpdatedAt", rs.getString("UpdatedAt"));
-
-            result.add(subtask);
-        }
-    } catch (Exception e) {
-        response.put("responseCode", "999")
-                .put("responseDescription", "Database error: " + e.getMessage());
-        e.printStackTrace();
-    } finally {
-        dbConnection.closeConn();
-    }
-
-    if (result.size() > 0) {
-        response.put("responseCode", "000")
-                .put("responseDescription", "Subtasks fetched successfully.")
-                .put("data", result);
-    } else {
-        response.put("responseCode", "999")
-                .put("responseDescription", "No subtasks found for the given isMultiple value.");
-    }
-
-    message.reply(response);
-}
 
 }

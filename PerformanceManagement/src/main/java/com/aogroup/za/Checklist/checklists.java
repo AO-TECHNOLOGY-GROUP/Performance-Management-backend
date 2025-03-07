@@ -36,6 +36,9 @@ public class checklists extends AbstractVerticle{
         
         eventBus.consumer("CREATECHECKLIST", this::createChecklist);
         eventBus.consumer("CREATEAGENTCHECKLIST", this::createAgentChecklistWithNotes);
+        eventBus.consumer("FETCHALLACHECKLISTS", this::fetchAllChecklists);
+        eventBus.consumer("FETCH_AGENT_DETAILS", this::fetchAgentDetailsByCustomerNumber);
+
     }
     
     private void createChecklist(Message<JsonObject> message) {
@@ -118,7 +121,7 @@ public class checklists extends AbstractVerticle{
 
         // Extract user details from headers
         MultiMap headers = message.headers();
-        
+
         if (headers.isEmpty()) {
             message.fail(666, "Unauthenticated User");
             return;
@@ -133,59 +136,94 @@ public class checklists extends AbstractVerticle{
         JsonArray checklists = requestBody.getJsonArray("checklists");
         String agentId = requestBody.getString("agentId");
         String notes = requestBody.getString("notes");
-        String escalation = requestBody.getString("escalation"); // UUID of person being escalated to
+//        String escalation = requestBody.getString("escalation"); // UUID of person being escalated to
 
-        if (agentId == null || checklists == null || checklists.isEmpty()) {
+        String escalatedToUserUUID = requestBody.getString("EscalatedToUserUUID", null);
+        String escalatedToEmail = requestBody.getString("EscalatedToEmail", null);
+        String escalatedToPhoneNumber = requestBody.getString("EscalatedToPhoneNumber", null);
+        String escalatedToName = requestBody.getString("EscalatedToName", null);
+
+        String userId = requestBody.getString("userId");
+        String branchId = requestBody.getString("branchId");
+        // Validate agentId
+        if (agentId == null || agentId.trim().isEmpty()) {
             response.put("responseCode", "999")
-                    .put("responseDescription", "Error! AgentId and Checklists are required.");
+                    .put("responseDescription", "Error! AgentId is required.");
             message.reply(response);
             return;
         }
 
-        // Determine escalationStatus based on logged-in user's UUID
-        int escalationStatus = 0; // Default: No escalation
-        if (isValidUUID(escalation)) {
-            if (escalation.equalsIgnoreCase(user_uuid)) {
-                escalationStatus = 1; // Escalated to self
-            } else {
-                escalationStatus = 2; // Escalated to another user
-            }
+        // Validate checklists array
+        if (checklists == null || checklists.isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! At least one checklist is required.");
+            message.reply(response);
+            return;
         }
 
-        String createChecklistSQL = "INSERT INTO [dbo].[Agent_Checklist] ([id], [agentId], [checklistName], [status], [createdAt], [updatedAt]) " +
-                "VALUES (NEWID(), ?, ?, ?, GETDATE(), GETDATE())";
+        // Determine escalationStatus
+        int escalationStatus = 0;
+        if (isValidUUID(escalatedToUserUUID)) {
+            escalationStatus = escalatedToUserUUID.equals(user_uuid) ? 1 : 2;
+        }
 
-        String insertNotesSQL = "INSERT INTO [dbo].[Checklist-Notes] ([id], [agentId], [notes], [escalation], [escalationStatus], [createdAt], [updatedAt]) " +
-                "VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), GETDATE())";
+        // SQL queries
+        String fetchChecklistNameSQL = "SELECT name FROM [dbo].[Checklist] WHERE id = ?";
+        String createChecklistSQL = "INSERT INTO [dbo].[Agent_Checklist] ([id], [agentId], [checklistName], [status], [userId], [branchId], [createdAt], [updatedAt]) " +
+                "VALUES (NEWID(), ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+        String insertNotesSQL = "INSERT INTO [dbo].[Checklist-Notes] ([id], [agentId], [notes], [userId], [branchId], [escalation], [escalationStatus], [createdAt], [updatedAt]) " +
+                "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
         try {
             connection.setAutoCommit(false);
 
-            // Insert checklists
-            try (PreparedStatement prCreateChecklist = connection.prepareStatement(createChecklistSQL)) {
+            try (PreparedStatement prFetchChecklistName = connection.prepareStatement(fetchChecklistNameSQL);
+                 PreparedStatement prCreateChecklist = connection.prepareStatement(createChecklistSQL)) {
+
                 for (int i = 0; i < checklists.size(); i++) {
                     JsonObject checklist = checklists.getJsonObject(i);
-                    String checklistName = checklist.getString("checklistName");
+                    int checklistId = Integer.parseInt(checklist.getString("checklistId"));
                     int status = Integer.parseInt(checklist.getString("status", "0"));
 
+                    // Fetch checklistName using checklistId
+                    prFetchChecklistName.setInt(1, checklistId);
+                    ResultSet rs = prFetchChecklistName.executeQuery();
+
+                    if (!rs.next()) {
+                        response.put("responseCode", "999")
+                                .put("responseDescription", "Error! Checklist ID " + checklistId + " not found.");
+                        message.reply(response);
+                        return;
+                    }
+
+                    String checklistName = rs.getString("name");
+
+                    // Insert into Agent_Checklist
                     prCreateChecklist.setString(1, agentId);
                     prCreateChecklist.setString(2, checklistName);
                     prCreateChecklist.setInt(3, status);
+                    prCreateChecklist.setString(4, userId);
+                    prCreateChecklist.setString(5, branchId);
                     prCreateChecklist.addBatch();
                 }
+
                 prCreateChecklist.executeBatch();
             }
 
-            // Insert notes, escalation, and escalationStatus
+            // Insert notes and escalation
             try (PreparedStatement prInsertNotes = connection.prepareStatement(insertNotesSQL)) {
                 prInsertNotes.setString(1, agentId);
                 prInsertNotes.setString(2, notes);
-                if (isValidUUID(escalation)) {
-                    prInsertNotes.setString(3, escalation);
-                } else {
-                    prInsertNotes.setNull(3, java.sql.Types.OTHER);
-                }
-                prInsertNotes.setInt(4, escalationStatus);
+                prInsertNotes.setString(3, userId);
+                prInsertNotes.setString(4, branchId);
+                 if (isValidUUID(escalatedToUserUUID)) {
+                        prInsertNotes.setString(5, escalatedToUserUUID);
+                    } else {
+                        prInsertNotes.setNull(5, java.sql.Types.OTHER);
+                    }
+                   
+                prInsertNotes.setInt(6, escalationStatus);
+               
                 prInsertNotes.executeUpdate();
             }
 
@@ -202,12 +240,12 @@ public class checklists extends AbstractVerticle{
             response.put("responseDescription", "Database error: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            if (connection != null) {
-                try {
+            try {
+                if (connection != null) {
                     connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
             dbConnection.closeConn();
         }
@@ -215,7 +253,7 @@ public class checklists extends AbstractVerticle{
         message.reply(response);
     }
 
-    private boolean isValidUUID(String uuid) {
+   private boolean isValidUUID(String uuid) {
         if (uuid == null || uuid.trim().isEmpty()) return false;
         try {
             UUID.fromString(uuid);
@@ -224,4 +262,120 @@ public class checklists extends AbstractVerticle{
             return false;
         }
     }
+
+    private void fetchAllChecklists(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        JsonArray checklistArray = new JsonArray();
+
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = null;
+        PreparedStatement psChecklists = null;
+        ResultSet rs = null;
+
+        try {
+            connection = dbConnection.getConnection();
+
+            // Query to fetch all checklists
+            String fetchQuery = "SELECT * FROM [dbo].[Checklist]";
+            psChecklists = connection.prepareStatement(fetchQuery);
+            rs = psChecklists.executeQuery();
+
+            // Loop through results and build the checklist array
+            while (rs.next()) {
+                JsonObject checklist = new JsonObject()
+                        .put("id", rs.getInt("id"))
+                        .put("name", rs.getString("name"))
+                        .put("createdAt", rs.getString("createdAt"))
+                        .put("updatedAt", rs.getString("updatedAt"));
+                checklistArray.add(checklist);
+            }
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success")
+                    .put("checklists", checklistArray);
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // Close resources to prevent memory leaks
+            try {
+                if (rs != null) rs.close();
+                if (psChecklists != null) psChecklists.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+    
+    private void fetchAgentDetailsByCustomerNumber(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        JsonObject requestBody = message.body();
+
+        // Extract customerNumber from request
+        String customerNumber = requestBody.getString("customerNumber");
+
+        // Validate input
+        if (customerNumber == null || customerNumber.trim().isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! Customer Number is required.");
+            message.reply(response);
+            return;
+        }
+
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = dbConnection.getConnection();
+
+            // Query to fetch agent details based on customerNumber
+            String query = "SELECT phone_number, full_name, id_number, location, branch_code " +
+                           "FROM [unaitas_agency].[dbo].[agents] WHERE customer_number = ?";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, customerNumber);
+            resultSet = preparedStatement.executeQuery();
+
+            // Check if agent details exist
+            if (resultSet.next()) {
+                response.put("responseCode", "000")
+                        .put("responseDescription", "Success")
+                        .put("phoneNumber", resultSet.getString("phone_number"))
+                        .put("fullName", resultSet.getString("full_name"))
+                        .put("idNumber", resultSet.getString("id_number"))
+                        .put("location", resultSet.getString("location"))
+                        .put("branchCode", resultSet.getString("branch_code"));
+            } else {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Error! No agent found for the given Customer Number.");
+            }
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // Close resources
+            try {
+                if (resultSet != null) resultSet.close();
+                if (preparedStatement != null) preparedStatement.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            dbConnection.closeConn();
+        }
+
+        // Send response
+        message.reply(response);
+    }
+
+
 }

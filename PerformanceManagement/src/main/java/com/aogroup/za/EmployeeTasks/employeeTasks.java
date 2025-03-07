@@ -196,6 +196,7 @@ public class employeeTasks extends AbstractVerticle{
                        "       s.Frequency, " +
                        "       s.Verification, " +
                        "       s.isMultiple, " +
+                       "       s.Call, " +
                        "       e.Target, " +
                        "       p.TaskDate, " +
                        "       p.ExpectedTarget, " +
@@ -220,6 +221,7 @@ public class employeeTasks extends AbstractVerticle{
                 String frequency = rs.getString("Frequency");
                 int verification = rs.getInt("Verification");
                 int isMultiple = rs.getInt("isMultiple");
+                int Call = rs.getInt("Call");
                 int target = rs.getInt("Target");
                 String taskDate = !rs.getString("TaskDate").isEmpty() ? rs.getString("TaskDate") : null;
                 int expected = rs.getInt("ExpectedTarget");
@@ -247,6 +249,7 @@ public class employeeTasks extends AbstractVerticle{
                         .put("Frequency", frequency)
                         .put("Verification", String.valueOf(verification))
                         .put("IsMultiple", String.valueOf(isMultiple))
+                        .put("Call", String.valueOf(Call))
                         .put("Progress", new JsonArray());
                     subtasksArray.add(subtaskData);
                 }
@@ -623,8 +626,11 @@ public class employeeTasks extends AbstractVerticle{
         }
 
         // SQL query to fetch users by branchId
-        String fetchUsersQuery = "SELECT * FROM [Performance_Management].[dbo].[usersBranches] WHERE [BranchId] = ?";
-
+        String fetchUsersQuery = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
+                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
+                "  LEFT JOIN roles r ON r.id = u.[type] "
+                + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId "
+                + "WHERE ub.BranchId = ?";
         try (PreparedStatement fetchUsersStmt = connection.prepareStatement(fetchUsersQuery)) {
             fetchUsersStmt.setString(1, branchId);
 
@@ -635,10 +641,29 @@ public class employeeTasks extends AbstractVerticle{
             // Loop through the result set and build the response
             while (resultSet.next()) {
                 JsonObject user = new JsonObject();
-                user.put("id", resultSet.getString("Id"));
-                user.put("userId", resultSet.getString("UserId"));
-                user.put("branchId", resultSet.getString("BranchId"));
-                user.put("createdDate", resultSet.getString("CreatedDate"));
+//                user.put("id", resultSet.getString("id"));
+//                user.put("userId", resultSet.getString("uuid"));
+//                user.put("branchId", resultSet.getString("branch"));
+//                user
+//                        .put("firstName", resultSet.getString("first_name"))
+//                        .put("lastName", resultSet.getString("last_name"))
+//                        .put("phoneNumber", resultSet.getString("phone_number"))
+//                        .put("email", resultSet.getString("email"));                      
+////                user.put("createdDate", resultSet.getString("CreatedDate"));
+                    user
+                        .put("id", resultSet.getString("id"))
+                        .put("firstName", resultSet.getString("first_name"))
+                        .put("lastName", resultSet.getString("last_name"))
+                        .put("phoneNumber", resultSet.getString("phone_number"))
+                        .put("email", resultSet.getString("email"))
+                        .put("uuid", resultSet.getString("uuid"))
+                        .put("type", resultSet.getString("type"))
+                        .put("roleName", resultSet.getString("RoleName"))
+                        .put("maker", resultSet.getString("creator_id"))
+                        .put("status", resultSet.getString("status"))
+                        .put("isRO", resultSet.getString("isRO"))
+                        .put("createdAt", resultSet.getString("created_at"))
+                        .put("channel", resultSet.getString("channel"));
 
                 usersArray.add(user);
             }
@@ -669,7 +694,7 @@ public class employeeTasks extends AbstractVerticle{
 
         message.reply(response);
     }
-
+    
     private void fetchUsersByRoleId(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         JsonObject requestBody = message.body();
