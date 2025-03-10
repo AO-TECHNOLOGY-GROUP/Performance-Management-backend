@@ -572,25 +572,7 @@ public class UserAuth extends AbstractVerticle {
         }
         String user = headers.get("user");
 
-//        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"portfolio_transfer");
-//        if (!hasPermission) {
-//            data
-//                    .put("responseCode", "999")
-//                    .put("responseDescription", "Error! Unauthorised permission");
-//            message.reply(data);
-//            return;
-//        }
-
         data.put("user", user);
-
-//        JsonArray array = new MakerCheckerUtil().fetchAllMakerChecker("mk.Id",approval_id);
-//        if (array.size() == 0) {
-//            data
-//                    .put("responseCode", "999")
-//                    .put("responseDescription", "Error! Invalid Approval Id ");
-//            message.reply(data);
-//            return;
-//        }
 
         JsonObject response = new JsonObject();
         response

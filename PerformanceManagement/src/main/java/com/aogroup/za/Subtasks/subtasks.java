@@ -77,19 +77,15 @@ public class subtasks extends AbstractVerticle{
 
                 String name = subtask.getString("name");
                 String frequency = subtask.getString("frequency");
-//                String verification = subtask.getString("verification");
                 
                 String verificationStr = subtask.getString("verification", "0");
-//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
                 Boolean verification = "1".equals(verificationStr);
                
                 
                 String isMultipleStr = subtask.getString("isMultiple", "0");
-//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
                 Boolean isMultiple = "1".equals(isMultipleStr);
                
                 String CallStr = subtask.getString("Call", "0");
-//                Boolean isMultiple = subtask.getBoolean("isMultiple", false);
                 Boolean Call = "1".equals(CallStr);
                
                 if (objectiveId == null || name == null || branchId == null) {

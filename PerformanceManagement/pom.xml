@@ -92,7 +92,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-mail-client</artifactId>
-            <version>4.1.4</version>
+            <version>3.7.1</version>
         </dependency>
         <dependency>
             <groupId>javax.mail</groupId>

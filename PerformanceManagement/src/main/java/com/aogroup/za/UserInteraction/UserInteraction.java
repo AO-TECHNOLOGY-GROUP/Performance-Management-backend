@@ -102,6 +102,7 @@ public class UserInteraction extends AbstractVerticle{
                 String otpSMS = "Dear " + name.toUpperCase() + ", your One Time Password is " + otp + ".";
                 JsonObject messageObject = new JsonObject()
                         .put("phonenumber", phoneNumber)
+                        .put("name", name)
                         .put("msg", otpSMS);
 
                 eventBus.send("COMMUNICATION_ADAPTOR", messageObject);
@@ -143,7 +144,8 @@ public class UserInteraction extends AbstractVerticle{
         String otp = data.getString("otp");
         JsonObject response = new JsonObject();
 
-        String query = "SELECT code, phone_number FROM verification_codes WHERE customer_number = ? AND [status] = 0";
+        // ✅ Step 1: Check OTP from `verification_codes`
+        String otpQuery = "SELECT code FROM verification_codes WHERE customer_number = ? AND [status] = 0";
 
         DBConnection dbConnection = new DBConnection();
         Connection conn = null;
@@ -152,25 +154,40 @@ public class UserInteraction extends AbstractVerticle{
 
         try {
             conn = dbConnection.getConnection();
-            stmt = conn.prepareStatement(query);
+            stmt = conn.prepareStatement(otpQuery);
             stmt.setString(1, customerNumber);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
                 String dbOtp = rs.getString("code");
-                String phoneNumber = rs.getString("phone_number");
 
                 if (dbOtp.equals(otp)) {
-                    // Update OTP status
-                    String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = ?";
-                    try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-                        updateStmt.setString(1, customerNumber);
-                        updateStmt.executeUpdate();
-                    }
+                    // ✅ Step 2: Fetch Name & Phone Number from `customer_details_stub`
+                    String customerQuery = "SELECT first_name, last_name, phone_number FROM [Dfa].[dbo].[customer_details_stub] WHERE customer_number = ?";
+                    try (PreparedStatement customerStmt = conn.prepareStatement(customerQuery)) {
+                        customerStmt.setString(1, customerNumber);
+                        ResultSet customerRs = customerStmt.executeQuery();
 
-                    response.put("responseCode", "000")
-                            .put("responseDescription", "OTP verified successfully.")
-                            .put("phoneNumber", phoneNumber);
+                        if (customerRs.next()) {
+                            String phoneNumber = customerRs.getString("phone_number");
+                            String fullName = customerRs.getString("first_name") + " " + customerRs.getString("last_name");
+
+                            // ✅ Step 3: Mark OTP as used
+                            String updateSql = "UPDATE verification_codes SET [status] = 1 WHERE customer_number = ?";
+                            try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                                updateStmt.setString(1, customerNumber);
+                                updateStmt.executeUpdate();
+                            }
+
+                            response.put("responseCode", "000")
+                                    .put("responseDescription", "OTP verified successfully.")
+                                    .put("phoneNumber", phoneNumber)
+                                    .put("name", fullName);  // ✅ Now includes the name
+                        } else {
+                            response.put("responseCode", "999")
+                                    .put("responseDescription", "Customer details not found.");
+                        }
+                    }
                 } else {
                     response.put("responseCode", "999")
                             .put("responseDescription", "Invalid OTP.");
@@ -1222,7 +1239,7 @@ public class UserInteraction extends AbstractVerticle{
                 if ("deposits".equalsIgnoreCase(type) && resultSet.getDouble("deposit") > 0 && resultSet.getInt("ConfirmationStatus") == 0) {
                     JsonObject depositRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
-                            .put("depositamount", resultSet.getDouble("deposit"))
+                            .put("depositamount", String.valueOf(resultSet.getDouble("deposit")))
                             .put("depositdate", resultSet.getString("depositDate"))
                             .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
@@ -1242,7 +1259,7 @@ public class UserInteraction extends AbstractVerticle{
                 } else if ("loanProspects".equalsIgnoreCase(type) && resultSet.getDouble("loanProspect") > 0 && resultSet.getInt("LoanStatus") == 0) {
                     JsonObject loanRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
-                            .put("loanamount", resultSet.getDouble("loanProspect"))
+                            .put("loanamount", String.valueOf(resultSet.getDouble("loanProspect")))
                             .put("loandate", resultSet.getString("loanProspectDate"))
                             .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
@@ -1364,7 +1381,7 @@ public class UserInteraction extends AbstractVerticle{
                 if ("deposits".equalsIgnoreCase(type) && resultSet.getDouble("Deposit") > 0 && resultSet.getInt("ConfirmationStatus") == 0) {
                     JsonObject depositRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
-                            .put("depositamount", resultSet.getDouble("Deposit"))
+                            .put("depositamount", String.valueOf(resultSet.getDouble("Deposit")))
                             .put("depositdate", resultSet.getString("DepositDate"))
                             .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
@@ -1384,7 +1401,7 @@ public class UserInteraction extends AbstractVerticle{
                 } else if ("loanProspects".equalsIgnoreCase(type) && resultSet.getDouble("LoanProspect") > 0 && resultSet.getInt("LoanStatus") == 0) {
                     JsonObject loanRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
-                            .put("loanamount", resultSet.getDouble("LoanProspect"))
+                            .put("loanamount", String.valueOf(resultSet.getDouble("LoanProspect")))
                             .put("loandate", resultSet.getString("LoanDate"))
                             .put("ConfirmationStatus", resultSet.getString("LoanStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))

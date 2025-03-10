@@ -38,7 +38,7 @@ public class checklists extends AbstractVerticle{
         eventBus.consumer("CREATEAGENTCHECKLIST", this::createAgentChecklistWithNotes);
         eventBus.consumer("FETCHALLACHECKLISTS", this::fetchAllChecklists);
         eventBus.consumer("FETCH_AGENT_DETAILS", this::fetchAgentDetailsByCustomerNumber);
-
+        eventBus.consumer("FETCHAGENTHISTORY", this::fetchAgentHistory);
     }
     
     private void createChecklist(Message<JsonObject> message) {
@@ -377,5 +377,109 @@ public class checklists extends AbstractVerticle{
         message.reply(response);
     }
 
+    private void fetchAgentHistory(Message<JsonObject> message) {
+        JsonObject response = new JsonObject();
+        JsonObject requestBody = message.body();
+        String agentId = requestBody.getString("agentId");
 
+        // Validate agentId
+        if (agentId == null || agentId.trim().isEmpty()) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error! AgentId is required.");
+            message.reply(response);
+            return;
+        }
+
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = dbConnection.getConnection();
+
+            
+            // **Check if the agent exists before fetching details**
+            String checkAgentQuery = "SELECT COUNT(*) AS count FROM [Performance_Management].[dbo].[Agent_Checklist] WHERE agentId = ?";
+            preparedStatement = connection.prepareStatement(checkAgentQuery);
+            preparedStatement.setString(1, agentId);
+            resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next() && resultSet.getInt("count") == 0) {
+                response.put("responseCode", "999")
+                        .put("responseDescription", "Error! Agent with ID " + agentId + " does not exist.");
+                message.reply(response);
+                return;
+            }
+            // SQL Query to fetch agent history
+            String query = "SELECT \n" +
+                            "ac.id, c.id AS Checklistid, ac.checklistName, ac.status AS checklistStatus, \n" +
+                            "cn.notes, cn.userId, cn.branchId, \n" +
+                            "cn.escalation AS EscalatedToUserUUID, \n" +
+                            "u.email AS EscalatedToEmail, \n" +
+                            "u.phone_number AS EscalatedToPhoneNumber, \n" +
+                            "CONCAT(u.first_name, ' ',  u.last_name) AS EscalatedToName, \n" +
+                            "ac.createdAt, ac.updatedAt \n" +
+                            "FROM [Performance_Management].[dbo].[Agent_Checklist] ac \n" +
+                            "inner JOIN [Performance_Management].[dbo].[Checklist-Notes] cn ON ac.agentId = cn.agentId \n" +
+                            "inner join Checklist c on c.name = ac.checklistName\n" +
+                            "inner JOIN [Performance_Management].[dbo].[users] u ON cn.escalation = u.uuid \n" +
+                            "WHERE ac.agentId = ?";
+
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, agentId);
+            resultSet = preparedStatement.executeQuery();
+
+            JsonArray checklistsArray = new JsonArray();
+            JsonObject agentData = new JsonObject();
+
+            while (resultSet.next()) {
+                // Build checklist array
+                JsonObject checklistItem = new JsonObject()
+                        .put("checklistId", resultSet.getString("checklistId"))
+                        .put("checklistName", resultSet.getString("checklistName"))
+                        .put("checklistStatus", String.valueOf(resultSet.getInt("checklistStatus")));
+                checklistsArray.add(checklistItem);
+
+                // Set common agent data
+                agentData.put("notes", resultSet.getString("notes"))
+                         .put("userId", resultSet.getString("userId"))
+                         .put("branchId", resultSet.getString("branchId"))
+                         .put("EscalatedToUserUUID", resultSet.getString("EscalatedToUserUUID"))
+                         .put("EscalatedToEmail", resultSet.getString("EscalatedToEmail"))
+                         .put("EscalatedToPhoneNumber", resultSet.getString("EscalatedToPhoneNumber"))
+                         .put("EscalatedToName", resultSet.getString("EscalatedToName"))
+                         .put("createdAt", resultSet.getString("createdAt"))
+                         .put("updatedAt", resultSet.getString("updatedAt"))
+                         .put("channel", "WEB")
+                         .put("token", "RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5");
+            }
+
+            // Attach checklists to the response
+            agentData.put("checklists", checklistsArray);
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Success! Agent history fetched successfully.")
+                    .mergeIn(agentData);
+
+        } catch (Exception e) {
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Database error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // Close resources
+            try {
+                if (resultSet != null) resultSet.close();
+                if (preparedStatement != null) preparedStatement.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            dbConnection.closeConn();
+        }
+
+        message.reply(response);
+    }
+
+
+    
 }
