@@ -259,7 +259,7 @@ public class UserAuth extends AbstractVerticle {
                     .addHeader("emailSubject", quickResponse.getString("emailSubject"))
                     .addHeader("emailBody", quickResponse.getString("emailBody"));
 
-//            eventBus.send("SEND_EMAIL", quickResponse,deliveryOptions);
+            eventBus.send("SEND_EMAIL", quickResponse,deliveryOptions);
             quickResponse.remove("emailRecipient");
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");

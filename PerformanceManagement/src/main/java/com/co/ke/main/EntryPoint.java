@@ -79,6 +79,12 @@ public class EntryPoint extends AbstractVerticle {
     public static String MOCASH_DATABASE_USER;
     public static String MOCASH_DATABASE_PASSWORD;
     public static String ENCRYPTED_SMS_ENDPOINT;
+    
+    public static String AGENCY_DATABASE_NAME;
+    public static String AGENCY_DATABASE_USER;
+    public static String AGENCY_DATABASE_PASSWORD;
+    public static String AGENCY_DATABASE_PORT;
+    public static String AGENCY_DATABASE_IP;
 
     
     // Hikari Setup
@@ -117,6 +123,12 @@ public class EntryPoint extends AbstractVerticle {
         
       
         ENCRYPTED_SMS_ENDPOINT = "";
+        
+        AGENCY_DATABASE_NAME = "";
+        AGENCY_DATABASE_USER = "";
+        AGENCY_DATABASE_PASSWORD = "";
+        AGENCY_DATABASE_PORT = "";
+        AGENCY_DATABASE_IP = "";
     }
 
     public static void main(String[] args) {
@@ -150,6 +162,14 @@ public class EntryPoint extends AbstractVerticle {
         COMPANY_PASSWORD = props.getCOMPANY_PASSWORD();
         COMPANY_USERNAME = props.getCOMPANY_USERNAME();
 //     
+
+        AGENCY_DATABASE_NAME = props.getAGENCY_DATABASE_NAME();
+        AGENCY_DATABASE_USER = props.getAGENCY_DATABASE_USER();
+        AGENCY_DATABASE_PASSWORD = props.getAGENCY_DATABASE_PASSWORD();
+        AGENCY_DATABASE_PORT = props.getAGENCY_DATABASE_PORT();
+        AGENCY_DATABASE_IP = props.getAGENCY_DATABASE_IP();
+;
+
     
     
         // Deployment options

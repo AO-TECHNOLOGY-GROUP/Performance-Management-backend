@@ -47,7 +47,11 @@ public final class Prop {
     private transient String COMPANY_PASSWORD;
     private transient String COMPANY_USERNAME;
 
-   
+    private transient String AGENCY_DATABASE_NAME;
+    private transient String AGENCY_DATABASE_USER;
+    private transient String AGENCY_DATABASE_PASSWORD;
+    private transient String AGENCY_DATABASE_PORT;
+    private transient String AGENCY_DATABASE_IP;
     /**
      * Instantiates a new Props.
      */
@@ -92,7 +96,14 @@ public final class Prop {
             COMPANY_PASSWORD = ency.decrypt(readString("COMPANY_PASSWORD").trim());
             COMPANY_USERNAME = readString("COMPANY_USERNAME").trim();
            
-
+            //AGENCY
+            AGENCY_DATABASE_NAME = readString("AGENCY_DATABASE_NAME").trim();
+            AGENCY_DATABASE_USER = readString("AGENCY_DATABASE_USER").trim();
+            AGENCY_DATABASE_PASSWORD = ency.decrypt(readString("AGENCY_DATABASE_PASSWORD").trim());
+            AGENCY_DATABASE_PORT = readString("AGENCY_DATABASE_PORT").trim();
+            AGENCY_DATABASE_IP = readString("AGENCY_DATABASE_IP").trim();
+            
+           
         } catch (IOException ex) {
             Logger.getLogger(Prop.class.getName()).log(Level.SEVERE, "ERROR: Failed to load properties file.\nCause: \n", ex);
 
@@ -286,6 +297,23 @@ public final class Prop {
         return COMPANY_USERNAME;
     }
 
+    public String getAGENCY_DATABASE_NAME() {
+        return AGENCY_DATABASE_NAME;
+    }
+
+    public String getAGENCY_DATABASE_USER() {
+        return AGENCY_DATABASE_USER;
+    }
+
+    public String getAGENCY_DATABASE_PASSWORD() {
+        return AGENCY_DATABASE_PASSWORD;
+    }
+
+    public String getAGENCY_DATABASE_PORT() {
+        return AGENCY_DATABASE_PORT;
+    }
     
-   
+   public String getAGENCY_DATABASE_IP() {
+       return AGENCY_DATABASE_IP;
+   }
 }

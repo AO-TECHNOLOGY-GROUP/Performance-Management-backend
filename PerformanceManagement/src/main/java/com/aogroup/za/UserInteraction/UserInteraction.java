@@ -403,7 +403,9 @@ public class UserInteraction extends AbstractVerticle{
                 String businessRealizedId = null;
                 String businessRealizedClusteredId = null;
                 
-                if (deposit != null || (newAccount != null && !newAccount.isEmpty()) || loanProspect != null) {
+//                if (deposit != null || (newAccount != null && !newAccount.isEmpty()) || loanProspect != null) {
+                    if (achieved == 1 || deposit != null || (newAccount != null && !newAccount.isEmpty()) || loanProspect != null) {
+
                     String insertBusinessSQL = "INSERT INTO BusinessRealized (deposit, depositDate, newAccount, newAccountDate, loanProspect, loanProspectDate, createdAt, updatedAt, ConfirmationStatus, AcountOpeningStatus, LoanStatus, NewAccountsStatus) " +
                                                "VALUES (?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), 0, 0, 0, 0)";
                     
@@ -1261,7 +1263,7 @@ public class UserInteraction extends AbstractVerticle{
                             .put("id", resultSet.getString("id"))
                             .put("loanamount", String.valueOf(resultSet.getDouble("loanProspect")))
                             .put("loandate", resultSet.getString("loanProspectDate"))
-                            .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
+                            .put("LoanStatus", resultSet.getString("LoanStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("customerNumber"))
@@ -1280,7 +1282,7 @@ public class UserInteraction extends AbstractVerticle{
                             .put("id", resultSet.getString("id"))
                             .put("accountName", resultSet.getString("newAccount"))
                             .put("accountdate", resultSet.getString("newAccountDate"))
-                            .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
+                            .put("AcountOpeningStatus", resultSet.getString("AcountOpeningStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("customerNumber"))
@@ -1298,7 +1300,7 @@ public class UserInteraction extends AbstractVerticle{
                     JsonObject completelynewAccountRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
                             .put("AchievedDate", resultSet.getString("AchievedDate"))
-                            .put("ConfirmationStatus", resultSet.getString("ConfirmationStatus"))
+                            .put("NewAccountsStatus", resultSet.getString("NewAccountsStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("customerNumber"))
@@ -1367,7 +1369,6 @@ public class UserInteraction extends AbstractVerticle{
                             "OR (tu.NewAccounts IS NOT NULL AND tu.AcountOpeningStatus = 0) " +
                             "OR (tu.LoanProspect IS NOT NULL AND tu.LoanStatus = 0) " +
                             "OR (uts.Achieved = 1 AND tu.NewAccountsStatus = 0) ) " +
-//                            "AND (uts.IsMultiple = 0) " +
                             "AND et.BranchId = ?";
 
         try (PreparedStatement fetchStmt = connection.prepareStatement(fetchQuery)) {
@@ -1403,7 +1404,7 @@ public class UserInteraction extends AbstractVerticle{
                             .put("id", resultSet.getString("id"))
                             .put("loanamount", String.valueOf(resultSet.getDouble("LoanProspect")))
                             .put("loandate", resultSet.getString("LoanDate"))
-                            .put("ConfirmationStatus", resultSet.getString("LoanStatus"))
+                            .put("LoanStatus", resultSet.getString("LoanStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("CustomerNumber"))
@@ -1423,7 +1424,7 @@ public class UserInteraction extends AbstractVerticle{
                             .put("id", resultSet.getString("id"))
                             .put("accountName", resultSet.getString("NewAccounts"))
                             .put("accountdate", resultSet.getString("AccountDate"))
-                            .put("ConfirmationStatus", resultSet.getString("AcountOpeningStatus"))
+                            .put("AcountOpeningStatus", resultSet.getString("AcountOpeningStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("CustomerNumber"))
@@ -1441,8 +1442,8 @@ public class UserInteraction extends AbstractVerticle{
                 } else if ("completelynewAccounts".equalsIgnoreCase(type) && resultSet.getString("Achieved") != null && resultSet.getInt("NewAccountsStatus") == 0) {
                     JsonObject completelynewAccountRecord = new JsonObject()
                             .put("id", resultSet.getString("id"))
-                            .put("AchievedDate", resultSet.getString("AchievedDate"))
-                            .put("ConfirmationStatus", resultSet.getString("NewAccountsStatus"))
+//                            .put("AchievedDate", resultSet.getString("AchievedDate"))
+                            .put("NewAccountsStatus", resultSet.getString("NewAccountsStatus"))
                             .put("TaskDate", resultSet.getString("TaskDate"))
                             .put("CustomerPhoneNumber", resultSet.getString("CustomerPhoneNumber"))
                             .put("customerNumber", resultSet.getString("CustomerNumber"))

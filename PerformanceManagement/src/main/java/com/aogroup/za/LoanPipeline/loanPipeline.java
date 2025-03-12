@@ -126,6 +126,7 @@ public class loanPipeline extends AbstractVerticle{
                 connection.commit();
                 response.put("responseCode", "000")
                         .put("responseDescription", "Loan pipeline entry created successfully");
+                        
             } else {
                 connection.rollback();
                 response.put("responseCode", "999")

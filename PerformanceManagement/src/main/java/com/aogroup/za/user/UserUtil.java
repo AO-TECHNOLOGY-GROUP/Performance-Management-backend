@@ -171,10 +171,26 @@ public class UserUtil {
             //System.out.println("\n USer Branches "+ insertedBranches);
                 
             String emailBody = "Dear " + firstName.toUpperCase() + " " + lastName.toUpperCase()
-                    + ". <br> You have been registered to use "+ ProjectConstants.COMPANY_NAME +" as a " + roleDetails.getString("description") +
-                    "<br> Your password is " + password
-                    + "<br> Visit <a href=\""+ ProjectConstants.PORTAL_URL +"\"  >here</a> to login to the system"
-                    + " <br> Thank you";
+                    + ".  You have been registered to use "+ ProjectConstants.COMPANY_NAME +" as a " + roleDetails.getString("description") +
+                    " Your password is " + password
+                    + " Visit " + ProjectConstants.PORTAL_URL +" to login to the system"
+                    + "  Thank you";
+
+            request
+                    .put("emailRecipient", email)
+                    .put("emailSubject", "REGISTRATION")
+                    .put("emailBody", emailBody);
+            
+            request
+                    .put("phonenumber", phoneNumber)
+                    .put("msg", emailBody);
+
+            request
+                    .put("responseCode", SUCCESS_CODE)
+                    .put("responseDescription", "Success! User created");
+
+            logger.applicationLog(logger.logPreString() + "PASSWORD - " + email + " - " + password, "", 99);
+
 
             request
                     .put("emailRecipient", email)

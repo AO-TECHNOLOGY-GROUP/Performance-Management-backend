@@ -6,6 +6,7 @@
 package com.aogroup.za.Checklist;
 
 import com.aogroup.za.datasource.DBConnection;
+import com.datasource.agency.AgencyDBConnection;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -17,6 +18,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import log.Logging;
 
@@ -328,7 +331,8 @@ public class checklists extends AbstractVerticle{
             return;
         }
 
-        DBConnection dbConnection = new DBConnection();
+//        DBConnection dbConnection = new DBConnection();
+        AgencyDBConnection dbConnection = new AgencyDBConnection();
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -343,7 +347,7 @@ public class checklists extends AbstractVerticle{
             preparedStatement.setString(1, customerNumber);
             resultSet = preparedStatement.executeQuery();
 
-            // Check if agent details exist
+            // Check if agent details existr
             if (resultSet.next()) {
                 response.put("responseCode", "000")
                         .put("responseDescription", "Success")
@@ -382,7 +386,6 @@ public class checklists extends AbstractVerticle{
         JsonObject requestBody = message.body();
         String agentId = requestBody.getString("agentId");
 
-        // Validate agentId
         if (agentId == null || agentId.trim().isEmpty()) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Error! AgentId is required.");
@@ -398,8 +401,7 @@ public class checklists extends AbstractVerticle{
         try {
             connection = dbConnection.getConnection();
 
-            
-            // **Check if the agent exists before fetching details**
+            // Check if the agent exists
             String checkAgentQuery = "SELECT COUNT(*) AS count FROM [Performance_Management].[dbo].[Agent_Checklist] WHERE agentId = ?";
             preparedStatement = connection.prepareStatement(checkAgentQuery);
             preparedStatement.setString(1, agentId);
@@ -411,62 +413,70 @@ public class checklists extends AbstractVerticle{
                 message.reply(response);
                 return;
             }
+
             // SQL Query to fetch agent history
             String query = "SELECT \n" +
-                            "ac.id, c.id AS Checklistid, ac.checklistName, ac.status AS checklistStatus, \n" +
-                            "cn.notes, cn.userId, cn.branchId, \n" +
-                            "cn.escalation AS EscalatedToUserUUID, \n" +
-                            "u.email AS EscalatedToEmail, \n" +
-                            "u.phone_number AS EscalatedToPhoneNumber, \n" +
-                            "CONCAT(u.first_name, ' ',  u.last_name) AS EscalatedToName, \n" +
-                            "ac.createdAt, ac.updatedAt \n" +
-                            "FROM [Performance_Management].[dbo].[Agent_Checklist] ac \n" +
-                            "inner JOIN [Performance_Management].[dbo].[Checklist-Notes] cn ON ac.agentId = cn.agentId \n" +
-                            "inner join Checklist c on c.name = ac.checklistName\n" +
-                            "inner JOIN [Performance_Management].[dbo].[users] u ON cn.escalation = u.uuid \n" +
-                            "WHERE ac.agentId = ?";
+                           "ac.id, c.id AS Checklistid, ac.checklistName, ac.status AS checklistStatus, \n" +
+                           "cn.notes, cn.userId, cn.branchId, \n" +
+                           "cn.escalation AS EscalatedToUserUUID, \n" +
+                           "u.email AS EscalatedToEmail, \n" +
+                           "u.phone_number AS EscalatedToPhoneNumber, \n" +
+                           "CONCAT(u.first_name, ' ',  u.last_name) AS EscalatedToName, \n" +
+                           "ac.createdAt, ac.updatedAt \n" +
+                           "FROM [Performance_Management].[dbo].[Agent_Checklist] ac \n" +
+                           "INNER JOIN [Performance_Management].[dbo].[Checklist-Notes] cn ON ac.agentId = cn.agentId \n" +
+                           "INNER JOIN Checklist c ON c.name = ac.checklistName\n" +
+                           "INNER JOIN [Performance_Management].[dbo].[users] u ON cn.escalation = u.uuid \n" +
+                           "WHERE ac.agentId = ?";
 
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, agentId);
             resultSet = preparedStatement.executeQuery();
 
-            JsonArray checklistsArray = new JsonArray();
-            JsonObject agentData = new JsonObject();
+            Map<String, JsonObject> historyMap = new HashMap<>();
 
             while (resultSet.next()) {
-                // Build checklist array
+                String key = resultSet.getString("notes") + "_" + resultSet.getString("userId") + "_" + resultSet.getString("branchId");
+
+                JsonObject historyItem = historyMap.getOrDefault(key, new JsonObject()
+                        .put("notes", resultSet.getString("notes"))
+                        .put("userId", resultSet.getString("userId"))
+                        .put("branchId", resultSet.getString("branchId"))
+                        .put("EscalatedToUserUUID", resultSet.getString("EscalatedToUserUUID"))
+                        .put("EscalatedToEmail", resultSet.getString("EscalatedToEmail"))
+                        .put("EscalatedToPhoneNumber", resultSet.getString("EscalatedToPhoneNumber"))
+                        .put("EscalatedToName", resultSet.getString("EscalatedToName"))
+                        .put("createdAt", resultSet.getString("createdAt"))
+                        .put("updatedAt", resultSet.getString("updatedAt"))
+                        .put("channel", "WEB")
+                        .put("token", "RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5")
+                        .put("checklists", new JsonArray()));
+
+                JsonArray checklistsArray = historyItem.getJsonArray("checklists");
+
                 JsonObject checklistItem = new JsonObject()
-                        .put("checklistId", resultSet.getString("checklistId"))
+                        .put("checklistId", resultSet.getString("Checklistid"))
                         .put("checklistName", resultSet.getString("checklistName"))
                         .put("checklistStatus", String.valueOf(resultSet.getInt("checklistStatus")));
-                checklistsArray.add(checklistItem);
 
-                // Set common agent data
-                agentData.put("notes", resultSet.getString("notes"))
-                         .put("userId", resultSet.getString("userId"))
-                         .put("branchId", resultSet.getString("branchId"))
-                         .put("EscalatedToUserUUID", resultSet.getString("EscalatedToUserUUID"))
-                         .put("EscalatedToEmail", resultSet.getString("EscalatedToEmail"))
-                         .put("EscalatedToPhoneNumber", resultSet.getString("EscalatedToPhoneNumber"))
-                         .put("EscalatedToName", resultSet.getString("EscalatedToName"))
-                         .put("createdAt", resultSet.getString("createdAt"))
-                         .put("updatedAt", resultSet.getString("updatedAt"))
-                         .put("channel", "WEB")
-                         .put("token", "RDJGOTUxNkYtMEVGMy00OTJCLThFMkYtQ0MyNTkyQzMwNDQ5");
+                checklistsArray.add(checklistItem);
+                historyItem.put("checklists", checklistsArray);
+
+                historyMap.put(key, historyItem);
             }
 
-            // Attach checklists to the response
-            agentData.put("checklists", checklistsArray);
+            JsonArray historyArray = new JsonArray();
+            historyMap.values().forEach(historyArray::add);
+
             response.put("responseCode", "000")
                     .put("responseDescription", "Success! Agent history fetched successfully.")
-                    .mergeIn(agentData);
+                    .put("history", historyArray);
 
         } catch (Exception e) {
             response.put("responseCode", "999")
                     .put("responseDescription", "Database error: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            // Close resources
             try {
                 if (resultSet != null) resultSet.close();
                 if (preparedStatement != null) preparedStatement.close();
@@ -480,6 +490,4 @@ public class checklists extends AbstractVerticle{
         message.reply(response);
     }
 
-
-    
 }
