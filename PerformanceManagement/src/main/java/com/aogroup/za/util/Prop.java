@@ -94,7 +94,7 @@ public final class Prop {
             T24_PORT = readString("T24_PORT").trim();
             COMPANY_NAME = readString("COMPANY_NAME").trim();
             COMPANY_PASSWORD = ency.decrypt(readString("COMPANY_PASSWORD").trim());
-            COMPANY_USERNAME = readString("COMPANY_USERNAME").trim();
+            COMPANY_USERNAME = ency.decrypt(readString("COMPANY_USERNAME").trim());
            
             //AGENCY
             AGENCY_DATABASE_NAME = readString("AGENCY_DATABASE_NAME").trim();

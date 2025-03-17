@@ -17,8 +17,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,21 +32,21 @@ import log.Logging;
  *
  * @author Best Point
  */
-public class employeeTasks extends AbstractVerticle{
+public class employeeTasks extends AbstractVerticle {
+
     private Logging logger;
     static int TIMEOUT_TIME = 120000;
     EventBus eventBus;
-    
-    
-     @Override
+
+    @Override
     public void start(Future<Void> startFuture) throws Exception {
         eventBus = vertx.eventBus();
         logger = new Logging();
-        
+
         //apis    
         eventBus.consumer("ASSIGNTARGETS", this::assigningTargets);
         eventBus.consumer("FETCHEMPLOYEETASKBYUSERID", this::fetchUserTaskById);
-        eventBus.consumer("UPDATETASKASSIGNED", this::updateTaskAssigned); 
+        eventBus.consumer("UPDATETASKASSIGNED", this::updateTaskAssigned);
         eventBus.consumer("UPDATEPROGRESSIVETRACKING", this::updateProgressiveTracking);
         eventBus.consumer("FETCH_ROS_BY_BRANCH_MANAGER", this::fetchROsByBranchManager);
         eventBus.consumer("FETCH_USER_SUBTASKS_WITH_TARGETS", this::fetchUserSubtasksWithTargets);
@@ -52,7 +55,75 @@ public class employeeTasks extends AbstractVerticle{
         eventBus.consumer("FETCHUSERSBYBRANCH", this::fetchUsersByBranch);
 
     }
-    
+
+    private int calculatePeriods(Date start, Date end, String frequency) {
+        Calendar startCal = Calendar.getInstance();
+        Calendar endCal = Calendar.getInstance();
+        startCal.setTime(start);
+        endCal.setTime(end);
+
+        int periods = 0;
+
+        switch (frequency.toLowerCase()) {
+            case "daily":
+                // Count working days (Mon-Fri)
+                while (!startCal.after(endCal)) {
+                    int dayOfWeek = startCal.get(Calendar.DAY_OF_WEEK);
+                    if (dayOfWeek != Calendar.SATURDAY && dayOfWeek != Calendar.SUNDAY) {
+                        periods++;
+                    }
+                    startCal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+                break;
+
+            case "weekly":
+                // Count weeks (full 7-day periods)
+                long diffMillis = endCal.getTimeInMillis() - startCal.getTimeInMillis();
+                long diffDays = diffMillis / (1000 * 60 * 60 * 24);
+                periods = (int) Math.ceil(diffDays / 7.0); // Round up to include partial weeks
+                break;
+
+            case "monthly":
+                // Count months
+                while (!startCal.after(endCal)) {
+                    periods++;
+                    startCal.add(Calendar.MONTH, 1);
+                }
+                if (startCal.get(Calendar.DAY_OF_MONTH) > endCal.get(Calendar.DAY_OF_MONTH)) {
+                    periods--; // Adjust if end date is before start day in last month
+                }
+                break;
+
+            case "quarterly":
+                // Count quarters (3-month periods)
+                while (!startCal.after(endCal)) {
+                    periods++;
+                    startCal.add(Calendar.MONTH, 3);
+                }
+                if (startCal.get(Calendar.DAY_OF_MONTH) > endCal.get(Calendar.DAY_OF_MONTH)) {
+                    periods--; // Adjust if end date is before start day in last quarter
+                }
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown frequency: " + frequency);
+        }
+
+        return periods > 0 ? periods : 1; // Ensure at least 1 period
+    }
+
+    private int countWorkingDays(LocalDate start, LocalDate end) {
+        int count = 0;
+        LocalDate date = start;
+        while (!date.isAfter(end)) {
+            if (!(date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY)) {
+                count++;
+            }
+            date = date.plusDays(1);
+        }
+        return count;
+    }
+
     private void assigningTargets(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         DBConnection dbConnection = new DBConnection();
@@ -92,49 +163,56 @@ public class employeeTasks extends AbstractVerticle{
                 int totalTarget = Integer.parseInt(subtaskData.getString("Target"));
 
                 // Fetch frequency and duration from Subtasks & Objectives
-                String query = "SELECT s.Frequency, o.PeriodStart, o.PeriodEnd " +
-                               "FROM Subtasks s JOIN Objectives o ON s.ObjectiveId = o.Id " +
-                               "WHERE s.Id = ?";
+                String query = "SELECT s.Frequency, o.PeriodStart, o.PeriodEnd "
+                        + "FROM Subtasks s JOIN Objectives o ON s.ObjectiveId = o.Id "
+                        + "WHERE s.Id = ?";
 
-                String frequency = "Weekly"; 
+                String frequency = "Weekly";
                 int numPeriods = 1;
                 int frequencydays = 0;
-                LocalDate startDate = null;
-                LocalDate endDate = null;
+                Date startDate = null;
+                Date endDate = null;
 
                 try (PreparedStatement psFetch = connection.prepareStatement(query)) {
                     psFetch.setString(1, subtaskId);
                     ResultSet rs = psFetch.executeQuery();
                     if (rs.next()) {
-                        frequency = rs.getString("Frequency"); 
+                        frequency = rs.getString("Frequency");
 
                         switch (frequency.toLowerCase()) {
                             case "weekly":
-                                frequencydays = 7;
+                                frequencydays = 5;
                                 break;
                             case "monthly":
-                                frequencydays = 30;
+                                frequencydays = 22;
                                 break;
                             case "quarterly":
-                                frequencydays = 90;
+                                frequencydays = 66;
                                 break;
                             case "daily":
                                 frequencydays = 1;
                                 break;
                         }
 
-                        startDate = rs.getDate("PeriodStart").toLocalDate();
-                        endDate = rs.getDate("PeriodEnd").toLocalDate();
-                        numPeriods = (int) ChronoUnit.DAYS.between(startDate, endDate) / frequencydays;
+                        startDate = rs.getDate("PeriodStart");
+                        endDate = rs.getDate("PeriodEnd");
+//                        numPeriods = (int) ChronoUnit.DAYS.between(startDate, endDate) / frequencydays;
+//                        numPeriods = countWorkingDays(startDate, endDate) / frequencydays;
+                        // Calculate number of periods
+                        System.out.println("STARTDATE: " + startDate + " ENDDATE: " + endDate);
+                        numPeriods = calculatePeriods(startDate, endDate, frequency);
+                        System.out.println("Frequency: " + frequency + ", Periods: " + numPeriods);
+
                     }
+
                 }
 
                 // Generate a unique EmployeeTaskId
                 String employeeTaskId = UUID.randomUUID().toString();
 
                 // Insert into EmployeeTasks with predefined ID
-                String insertTaskSQL = "INSERT INTO EmployeeTasks (Id, UserId, BranchId, SubtasksId, Target, CreatedAt, UpdatedAt) " +
-                                       "VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+                String insertTaskSQL = "INSERT INTO EmployeeTasks (Id, UserId, BranchId, SubtasksId, Target, CreatedAt, UpdatedAt) "
+                        + "VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())";
 
                 try (PreparedStatement psInsertTask = connection.prepareStatement(insertTaskSQL)) {
                     psInsertTask.setString(1, employeeTaskId);
@@ -148,19 +226,41 @@ public class employeeTasks extends AbstractVerticle{
                 System.out.println("EmployeeTaskId : " + employeeTaskId); // Debugging
 
                 // Insert tracking records for each period dynamically
-                String insertProgressSQL = "INSERT INTO ProgressiveTracking (Id, EmployeeTaskId, TaskDate, ExpectedTarget, AchievedTarget, CreatedAt, UpdatedAt) " +
-                                           "VALUES (NEWID(), ?, ?, ?, 0, GETDATE(), GETDATE())";
+                String insertProgressSQL = "INSERT INTO ProgressiveTracking (Id, EmployeeTaskId, TaskDate, ExpectedTarget, AchievedTarget, CreatedAt, UpdatedAt) "
+                        + "VALUES (NEWID(), ?, ?, ?, 0, GETDATE(), GETDATE())";
 
-                LocalDate trackingDate = startDate;
+                Calendar trackingCal = Calendar.getInstance();
+                trackingCal.setTime(startDate);
+
                 for (int p = 0; p < numPeriods; p++) {
-                    try (PreparedStatement psInsertProgress = connection.prepareStatement(insertProgressSQL)) {
-                        psInsertProgress.setString(1, employeeTaskId);
-                        psInsertProgress.setDate(2, java.sql.Date.valueOf(trackingDate));
-                        psInsertProgress.setInt(3, totalTarget);
-                        psInsertProgress.executeUpdate();
+                    // Skip weekends for daily frequency
+                    if ("daily".equalsIgnoreCase(frequency)) {
+                        while (trackingCal.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY ||
+                               trackingCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+                            trackingCal.add(Calendar.DAY_OF_MONTH, 1);
+                        }
                     }
 
-                    trackingDate = trackingDate.plusDays(frequencydays); 
+                    PreparedStatement psInsertProgress = connection.prepareStatement(insertProgressSQL);
+                    psInsertProgress.setString(1, employeeTaskId);
+                    psInsertProgress.setDate(2, new java.sql.Date(trackingCal.getTimeInMillis()));
+                    psInsertProgress.setInt(3, totalTarget); 
+                    psInsertProgress.executeUpdate();
+                    psInsertProgress.close();
+
+                    // Increment tracking date based on frequency
+                    if ("daily".equalsIgnoreCase(frequency)) {
+                        trackingCal.add(Calendar.DAY_OF_MONTH, 1);
+                    } else if ("weekly".equalsIgnoreCase(frequency)) {
+                        trackingCal.add(Calendar.DAY_OF_MONTH, 7);
+                    } else if ("monthly".equalsIgnoreCase(frequency)) {
+                        trackingCal.add(Calendar.MONTH, 1);
+                         trackingCal.set(Calendar.DAY_OF_MONTH, trackingCal.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set to end of the month
+                    } else if ("quarterly".equalsIgnoreCase(frequency)) {
+                        trackingCal.add(Calendar.MONTH, 3);
+                                trackingCal.set(Calendar.DAY_OF_MONTH, trackingCal.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set to end of the quarter month
+
+                    }
                 }
             }
 
@@ -171,7 +271,8 @@ public class employeeTasks extends AbstractVerticle{
         } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());
@@ -190,23 +291,24 @@ public class employeeTasks extends AbstractVerticle{
         JsonObject requestBody = message.body();
         String userId = requestBody.getString("UserId");
 
-        String query = "SELECT o.Name AS ObjectiveName, " +
-                       "       e.Id AS SubtaskID, " +  // <-- Added Subtask ID
-                       "       s.Name AS SubtaskName, " +
-                       "       s.Frequency, " +
-                       "       s.Verification, " +
-                       "       s.isMultiple, " +
-                       "       s.Call, " +
-                       "       e.Target, " +
-                       "       p.TaskDate, " +
-                       "       p.ExpectedTarget, " +
-                       "       p.AchievedTarget " +
-                       "FROM EmployeeTasks e " +
-                       "INNER JOIN Subtasks s ON e.SubtasksId = s.Id " +
-                       "INNER JOIN Objectives o ON s.ObjectiveId = o.Id " +
-                       "INNER JOIN ProgressiveTracking p ON e.Id = p.EmployeeTaskId " +
-                       "WHERE e.UserId = ? " +
-                       "ORDER BY o.Name, s.Name, p.TaskDate";
+        String query = "SELECT o.Name AS ObjectiveName, "
+                + "       e.Id AS SubtaskID, "
+                + // <-- Added Subtask ID
+                "       s.Name AS SubtaskName, "
+                + "       s.Frequency, "
+                + "       s.Verification, "
+                + "       s.isMultiple, "
+                + "       s.Call, "
+                + "       e.Target, "
+                + "       p.TaskDate, "
+                + "       p.ExpectedTarget, "
+                + "       p.AchievedTarget "
+                + "FROM EmployeeTasks e "
+                + "INNER JOIN Subtasks s ON e.SubtasksId = s.Id "
+                + "INNER JOIN Objectives o ON s.ObjectiveId = o.Id "
+                + "INNER JOIN ProgressiveTracking p ON e.Id = p.EmployeeTaskId "
+                + "WHERE e.UserId = ? "
+                + "ORDER BY o.Name, s.Name, p.TaskDate";
 
         try (PreparedStatement psFetch = connection.prepareStatement(query)) {
             psFetch.setString(1, userId);
@@ -228,38 +330,37 @@ public class employeeTasks extends AbstractVerticle{
                 int achieved = rs.getInt("AchievedTarget");
 
                 JsonObject objectiveData = groupedResults.getOrDefault(objectiveName, new JsonObject()
-                    .put("ObjectiveName", objectiveName)
-                    .put("Subtasks", new JsonArray()));
+                        .put("ObjectiveName", objectiveName)
+                        .put("Subtasks", new JsonArray()));
 
                 JsonArray subtasksArray = objectiveData.getJsonArray("Subtasks");
 
                 Optional<JsonObject> subtaskEntry = subtasksArray.stream()
-                    .map(obj -> (JsonObject) obj)
-                    .filter(obj -> obj.getString("SubtaskName").equals(subtaskName))
-                    .findFirst();
+                        .map(obj -> (JsonObject) obj)
+                        .filter(obj -> obj.getString("SubtaskName").equals(subtaskName))
+                        .findFirst();
 
                 JsonObject subtaskData;
                 if (subtaskEntry.isPresent()) {
                     subtaskData = subtaskEntry.get();
                 } else {
                     subtaskData = new JsonObject()
-                        .put("SubtaskName", subtaskName)
-                        .put("SubtaskID", subtaskId)  // <-- Added SubtaskID to JSON response
-                        .put("Target", target)
-                        .put("Frequency", frequency)
-                        .put("Verification", String.valueOf(verification))
-                        .put("IsMultiple", String.valueOf(isMultiple))
-                        .put("Call", String.valueOf(Call))
-                        .put("Progress", new JsonArray());
+                            .put("SubtaskName", subtaskName)
+                            .put("SubtaskID", subtaskId) // <-- Added SubtaskID to JSON response
+                            .put("Target", target)
+                            .put("Frequency", frequency)
+                            .put("Verification", String.valueOf(verification))
+                            .put("IsMultiple", String.valueOf(isMultiple))
+                            .put("Call", String.valueOf(Call))
+                            .put("Progress", new JsonArray());
                     subtasksArray.add(subtaskData);
                 }
 
                 JsonArray progressArray = subtaskData.getJsonArray("Progress");
                 progressArray.add(new JsonObject()
-                    .put("TaskDate", taskDate)
-                    .put("ExpectedTarget", String.valueOf(expected))
-                    .put("AchievedTarget", String.valueOf(achieved)));
-                    
+                        .put("TaskDate", taskDate)
+                        .put("ExpectedTarget", String.valueOf(expected))
+                        .put("AchievedTarget", String.valueOf(achieved)));
 
                 groupedResults.put(objectiveName, objectiveData);
             }
@@ -274,7 +375,7 @@ public class employeeTasks extends AbstractVerticle{
             response.put("responseCode", "999")
                     .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
-            
+
         } finally {
             dbConnection.closeConn();
         }
@@ -283,104 +384,104 @@ public class employeeTasks extends AbstractVerticle{
     }
 
     private void updateTaskAssigned(Message<JsonObject> message) {
-    JsonObject response = new JsonObject();
-    DBConnection dbConnection = new DBConnection();
-    Connection connection = dbConnection.getConnection();
+        JsonObject response = new JsonObject();
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection();
 
-    JsonObject requestBody = message.body();
-    String id = requestBody.getString("Id");
-    String target = requestBody.getString("Target");
+        JsonObject requestBody = message.body();
+        String id = requestBody.getString("Id");
+        String target = requestBody.getString("Target");
 
-    String updateTaskSQL = "UPDATE [dbo].[EmployeeTasks] SET [Target] = ?, [UpdatedAt] = GETDATE() WHERE [Id] = ?";
-    String updateProgressiveTrackingSQL = "UPDATE [dbo].[ProgressiveTracking] SET [ExpectedTarget] = ?, [UpdatedAt] = GETDATE() WHERE [EmployeeTaskId] = ?";
+        String updateTaskSQL = "UPDATE [dbo].[EmployeeTasks] SET [Target] = ?, [UpdatedAt] = GETDATE() WHERE [Id] = ?";
+        String updateProgressiveTrackingSQL = "UPDATE [dbo].[ProgressiveTracking] SET [ExpectedTarget] = ?, [UpdatedAt] = GETDATE() WHERE [EmployeeTaskId] = ?";
 
-    try {
-        connection.setAutoCommit(false); // Begin transaction
-
-        // Debugging: Print input values
-        System.out.println("Updating EmployeeTasks - ID: " + id + ", Target: " + target);
-        System.out.println("Updating ProgressiveTracking - EmployeeTaskId: " + id + ", ExpectedTarget: " + target);
-
-        // Check if EmployeeTasks ID exists
-        String checkTaskSQL = "SELECT COUNT(*) FROM [dbo].[EmployeeTasks] WHERE [Id] = ?";
-        try (PreparedStatement checkTaskStmt = connection.prepareStatement(checkTaskSQL)) {
-            checkTaskStmt.setString(1, id);
-            ResultSet rs = checkTaskStmt.executeQuery();
-            if (rs.next() && rs.getInt(1) == 0) {
-                response.put("responseCode", "999")
-                        .put("responseDescription", "Error: EmployeeTasks ID not found");
-                message.reply(response);
-                return;
-            }
-        }
-
-        // Check if ProgressiveTracking EmployeeTaskId exists
-        String checkProgressiveSQL = "SELECT COUNT(*) FROM [dbo].[ProgressiveTracking] WHERE [EmployeeTaskId] = ?";
-        try (PreparedStatement checkProgressiveStmt = connection.prepareStatement(checkProgressiveSQL)) {
-            checkProgressiveStmt.setString(1, id);
-            ResultSet rs = checkProgressiveStmt.executeQuery();
-            if (rs.next() && rs.getInt(1) == 0) {
-                response.put("responseCode", "999")
-                        .put("responseDescription", "Error: ProgressiveTracking EmployeeTaskId not found");
-                message.reply(response);
-                return;
-            }
-        }
-
-        // Update EmployeeTasks
-        try (PreparedStatement psUpdateTask = connection.prepareStatement(updateTaskSQL)) {
-            psUpdateTask.setInt(1, Integer.parseInt(target));
-            psUpdateTask.setString(2, id);
-            int rows = psUpdateTask.executeUpdate();
-            System.out.println("Rows affected in EmployeeTasks: " + rows);
-
-            if (rows == 0) {
-                response.put("responseCode", "999").put("responseDescription", "No EmployeeTasks updated");
-                message.reply(response);
-                return;
-            }
-        }
-
-        // Update ProgressiveTracking
-        try (PreparedStatement psUpdateProgressiveTracking = connection.prepareStatement(updateProgressiveTrackingSQL)) {
-            psUpdateProgressiveTracking.setInt(1, Integer.parseInt(target));
-            psUpdateProgressiveTracking.setString(2, id);
-            int rowsProgress = psUpdateProgressiveTracking.executeUpdate();
-            System.out.println("Rows affected in ProgressiveTracking: " + rowsProgress);
-
-            if (rowsProgress == 0) {
-                response.put("responseCode", "999").put("responseDescription", "No ProgressiveTracking updated");
-                message.reply(response);
-                return;
-            }
-        }
-
-        connection.commit(); // Commit transaction
-
-        response.put("responseCode", "000")
-                .put("responseDescription", "Task updated successfully");
-
-    } catch (Exception e) {
         try {
-            connection.rollback(); // Rollback transaction on failure
-        } catch (SQLException rollbackEx) {
-            rollbackEx.printStackTrace();
-        }
-        response.put("responseCode", "999")
-                .put("responseDescription", "Error: " + e.getMessage());
-        e.printStackTrace();
-    } finally {
-        try {
-            connection.setAutoCommit(true);
-            connection.close();
-        } catch (SQLException e) {
+            connection.setAutoCommit(false); // Begin transaction
+
+            // Debugging: Print input values
+            System.out.println("Updating EmployeeTasks - ID: " + id + ", Target: " + target);
+            System.out.println("Updating ProgressiveTracking - EmployeeTaskId: " + id + ", ExpectedTarget: " + target);
+
+            // Check if EmployeeTasks ID exists
+            String checkTaskSQL = "SELECT COUNT(*) FROM [dbo].[EmployeeTasks] WHERE [Id] = ?";
+            try (PreparedStatement checkTaskStmt = connection.prepareStatement(checkTaskSQL)) {
+                checkTaskStmt.setString(1, id);
+                ResultSet rs = checkTaskStmt.executeQuery();
+                if (rs.next() && rs.getInt(1) == 0) {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error: EmployeeTasks ID not found");
+                    message.reply(response);
+                    return;
+                }
+            }
+
+            // Check if ProgressiveTracking EmployeeTaskId exists
+            String checkProgressiveSQL = "SELECT COUNT(*) FROM [dbo].[ProgressiveTracking] WHERE [EmployeeTaskId] = ?";
+            try (PreparedStatement checkProgressiveStmt = connection.prepareStatement(checkProgressiveSQL)) {
+                checkProgressiveStmt.setString(1, id);
+                ResultSet rs = checkProgressiveStmt.executeQuery();
+                if (rs.next() && rs.getInt(1) == 0) {
+                    response.put("responseCode", "999")
+                            .put("responseDescription", "Error: ProgressiveTracking EmployeeTaskId not found");
+                    message.reply(response);
+                    return;
+                }
+            }
+
+            // Update EmployeeTasks
+            try (PreparedStatement psUpdateTask = connection.prepareStatement(updateTaskSQL)) {
+                psUpdateTask.setInt(1, Integer.parseInt(target));
+                psUpdateTask.setString(2, id);
+                int rows = psUpdateTask.executeUpdate();
+                System.out.println("Rows affected in EmployeeTasks: " + rows);
+
+                if (rows == 0) {
+                    response.put("responseCode", "999").put("responseDescription", "No EmployeeTasks updated");
+                    message.reply(response);
+                    return;
+                }
+            }
+
+            // Update ProgressiveTracking
+            try (PreparedStatement psUpdateProgressiveTracking = connection.prepareStatement(updateProgressiveTrackingSQL)) {
+                psUpdateProgressiveTracking.setInt(1, Integer.parseInt(target));
+                psUpdateProgressiveTracking.setString(2, id);
+                int rowsProgress = psUpdateProgressiveTracking.executeUpdate();
+                System.out.println("Rows affected in ProgressiveTracking: " + rowsProgress);
+
+                if (rowsProgress == 0) {
+                    response.put("responseCode", "999").put("responseDescription", "No ProgressiveTracking updated");
+                    message.reply(response);
+                    return;
+                }
+            }
+
+            connection.commit(); // Commit transaction
+
+            response.put("responseCode", "000")
+                    .put("responseDescription", "Task updated successfully");
+
+        } catch (Exception e) {
+            try {
+                connection.rollback(); // Rollback transaction on failure
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            response.put("responseCode", "999")
+                    .put("responseDescription", "Error: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+                connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            dbConnection.closeConn();
         }
-        dbConnection.closeConn();
+        message.reply(response);
     }
-    message.reply(response);
-}
-    
+
     private void updateProgressiveTracking(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         DBConnection dbConnection = new DBConnection();
@@ -390,9 +491,9 @@ public class employeeTasks extends AbstractVerticle{
         String userId = requestBody.getString("UserId");
         JsonArray updates = requestBody.getJsonArray("updates");
 
-        String updateSQL = "UPDATE ProgressiveTracking " +
-                           "SET ExpectedTarget = ?, UpdatedAt = GETDATE() " +
-                           "WHERE Id = ?";
+        String updateSQL = "UPDATE ProgressiveTracking "
+                + "SET ExpectedTarget = ?, UpdatedAt = GETDATE() "
+                + "WHERE Id = ?";
 
         try {
             try (PreparedStatement psUpdate = connection.prepareStatement(updateSQL)) {
@@ -421,7 +522,7 @@ public class employeeTasks extends AbstractVerticle{
 
         message.reply(response);
     }
-          
+
     private void fetchROsByBranchManager(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         DBConnection dbConnection = new DBConnection();
@@ -432,12 +533,12 @@ public class employeeTasks extends AbstractVerticle{
 
         try {
             // Fetch BranchId for the Branch Manager
-            String branchQuery = "SELECT ub.BranchId " +
-                                 "FROM users u " +
-                                 "JOIN usersBranches ub ON u.uuid = ub.UserId " +
-                                 "JOIN roles r ON u.type = r.id " +
-                                 "WHERE u.uuid = ? AND r.name = 'BM'"; 
-            
+            String branchQuery = "SELECT ub.BranchId "
+                    + "FROM users u "
+                    + "JOIN usersBranches ub ON u.uuid = ub.UserId "
+                    + "JOIN roles r ON u.type = r.id "
+                    + "WHERE u.uuid = ? AND r.name = 'BM'";
+
             String branchId = null;
             try (PreparedStatement psBranch = connection.prepareStatement(branchQuery)) {
                 psBranch.setString(1, branchManagerId);
@@ -459,12 +560,11 @@ public class employeeTasks extends AbstractVerticle{
             }
 
             // Fetch ROs from the same branch
-            String fetchROsQuery = "SELECT u.id AS UserId, u.first_name + ' ' + u.last_name AS Name, " +
-                                   "u.email AS Email, u.uuid AS UUID, u.phone_number AS PhoneNumber " +
-                                   "FROM users u " +
-                                   "JOIN usersBranches ub ON u.uuid = ub.UserId " +
-                                   "WHERE ub.BranchId = ? AND u.isRO = 1";
-            
+            String fetchROsQuery = "SELECT u.id AS UserId, u.first_name + ' ' + u.last_name AS Name, "
+                    + "u.email AS Email, u.uuid AS UUID, u.phone_number AS PhoneNumber "
+                    + "FROM users u "
+                    + "JOIN usersBranches ub ON u.uuid = ub.UserId "
+                    + "WHERE ub.BranchId = ? AND u.isRO = 1";
 
             JsonArray roList = new JsonArray();
             try (PreparedStatement psROs = connection.prepareStatement(fetchROsQuery)) {
@@ -507,15 +607,15 @@ public class employeeTasks extends AbstractVerticle{
         JsonObject requestBody = message.body();
         String userId = requestBody.getString("UserId");
 
-        String query = "SELECT o.Name AS ObjectiveName, " +
-                       "       s.Id AS SubtaskID, " +
-                       "       s.Name AS SubtaskName, " +
-                       "       e.Target AS Target " +
-                       "FROM EmployeeTasks e " +
-                       "INNER JOIN Subtasks s ON e.SubtasksId = s.Id " +
-                       "INNER JOIN Objectives o ON s.ObjectiveId = o.Id " +
-                       "WHERE e.UserId = ? " +
-                       "ORDER BY o.Name, s.Name";
+        String query = "SELECT o.Name AS ObjectiveName, "
+                + "       s.Id AS SubtaskID, "
+                + "       s.Name AS SubtaskName, "
+                + "       e.Target AS Target "
+                + "FROM EmployeeTasks e "
+                + "INNER JOIN Subtasks s ON e.SubtasksId = s.Id "
+                + "INNER JOIN Objectives o ON s.ObjectiveId = o.Id "
+                + "WHERE e.UserId = ? "
+                + "ORDER BY o.Name, s.Name";
 
         try (PreparedStatement psFetch = connection.prepareStatement(query)) {
             psFetch.setString(1, userId);
@@ -525,10 +625,10 @@ public class employeeTasks extends AbstractVerticle{
 
             while (rs.next()) {
                 JsonObject subtaskData = new JsonObject()
-                    .put("ObjectiveName", rs.getString("ObjectiveName"))
-                    .put("SubtaskID", rs.getString("SubtaskID"))
-                    .put("SubtaskName", rs.getString("SubtaskName"))
-                    .put("Target", rs.getInt("Target"));
+                        .put("ObjectiveName", rs.getString("ObjectiveName"))
+                        .put("SubtaskID", rs.getString("SubtaskID"))
+                        .put("SubtaskName", rs.getString("SubtaskName"))
+                        .put("Target", rs.getInt("Target"));
 
                 subtasksArray.add(subtaskData);
             }
@@ -565,15 +665,16 @@ public class employeeTasks extends AbstractVerticle{
             }
 
             // Fetch users by role name
-            String fetchUsersQuery = "SELECT u.id AS UserId, " +
-                                     "u.first_name + ' ' + u.last_name AS Name, " +
-                                     "u.email AS Email, " +
-                                     "u.uuid AS UUID, " +
-                                     "u.phone_number AS PhoneNumber, " +
-                                     "u.branch AS Branch " + 
-                                     "FROM users u " +
-                                     "JOIN roles r ON u.type = r.id " +  // Join with roles table
-                                     "WHERE r.name = ?";  // Use role name instead of role ID
+            String fetchUsersQuery = "SELECT u.id AS UserId, "
+                    + "u.first_name + ' ' + u.last_name AS Name, "
+                    + "u.email AS Email, "
+                    + "u.uuid AS UUID, "
+                    + "u.phone_number AS PhoneNumber, "
+                    + "u.branch AS Branch "
+                    + "FROM users u "
+                    + "JOIN roles r ON u.type = r.id "
+                    + // Join with roles table
+                    "WHERE r.name = ?";  // Use role name instead of role ID
 
             JsonArray userList = new JsonArray();
             try (PreparedStatement psUsers = connection.prepareStatement(fetchUsersQuery)) {
@@ -626,9 +727,9 @@ public class employeeTasks extends AbstractVerticle{
         }
 
         // SQL query to fetch users by branchId
-        String fetchUsersQuery = "SELECT u.id,first_name,last_name,phone_number,email,\n" +
-                "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n" +
-                "  LEFT JOIN roles r ON r.id = u.[type] "
+        String fetchUsersQuery = "SELECT u.id,first_name,last_name,phone_number,email,\n"
+                + "  uuid,[type],isRO,u.creator_id,[status],u.created_at,u.channel,r.[name] AS RoleName FROM users u\n"
+                + "  LEFT JOIN roles r ON r.id = u.[type] "
                 + "LEFT JOIN usersBranches ub on u.uuid = ub.UserId "
                 + "WHERE ub.BranchId = ?";
         try (PreparedStatement fetchUsersStmt = connection.prepareStatement(fetchUsersQuery)) {
@@ -650,7 +751,7 @@ public class employeeTasks extends AbstractVerticle{
 //                        .put("phoneNumber", resultSet.getString("phone_number"))
 //                        .put("email", resultSet.getString("email"));                      
 ////                user.put("createdDate", resultSet.getString("CreatedDate"));
-                    user
+                user
                         .put("id", resultSet.getString("id"))
                         .put("firstName", resultSet.getString("first_name"))
                         .put("lastName", resultSet.getString("last_name"))
@@ -694,7 +795,7 @@ public class employeeTasks extends AbstractVerticle{
 
         message.reply(response);
     }
-    
+
     private void fetchUsersByRoleId(Message<JsonObject> message) {
         JsonObject response = new JsonObject();
         JsonObject requestBody = message.body();
@@ -726,14 +827,14 @@ public class employeeTasks extends AbstractVerticle{
 
         try {
             connection = dbConnection.getConnection();
-            String fetchUsersQuery = "SELECT u.id AS UserId, " +
-                                     "u.first_name + ' ' + u.last_name AS Name, " +
-                                     "u.email AS Email, " +
-                                     "u.uuid AS UUID, " +
-                                     "u.phone_number AS PhoneNumber, " +
-                                     "u.branch AS Branch " +
-                                     "FROM users u " +
-                                     "WHERE u.type = ?";
+            String fetchUsersQuery = "SELECT u.id AS UserId, "
+                    + "u.first_name + ' ' + u.last_name AS Name, "
+                    + "u.email AS Email, "
+                    + "u.uuid AS UUID, "
+                    + "u.phone_number AS PhoneNumber, "
+                    + "u.branch AS Branch "
+                    + "FROM users u "
+                    + "WHERE u.type = ?";
 
             psUsers = connection.prepareStatement(fetchUsersQuery);
             psUsers.setInt(1, roleId);
@@ -761,9 +862,15 @@ public class employeeTasks extends AbstractVerticle{
         } finally {
             // Properly close resources to avoid memory leaks
             try {
-                if (rs != null) rs.close();
-                if (psUsers != null) psUsers.close();
-                if (connection != null) connection.close();
+                if (rs != null) {
+                    rs.close();
+                }
+                if (psUsers != null) {
+                    psUsers.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }

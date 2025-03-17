@@ -5,6 +5,7 @@
  */
 package com.aogroup.za.Transactions;
 
+import com.aogroup.za.user.UserUtil;
 import com.aogroup.za.util.Utilities;
 import com.instance.CBSService;
 import com.instance.CBSUtility;
@@ -48,14 +49,17 @@ public class SMETransactions extends AbstractVerticle {
         JsonObject response = new JsonObject();
         Utilities util = new Utilities();
         String type = "";
-        JsonObject smeUserDetails = new JsonObject();
         
-        smeUserDetails = util.fetchSmeUserDetails(data);
-        if (!smeUserDetails.isEmpty()) {
-            type = smeUserDetails.getString("type");
-        } else {
-            type = "";
-        }
+        System.out.println("Started Statement fetching API");
+//        JsonObject smeUserDetails = new JsonObject();
+//        JsonObject userDetails = new UserUtil().fetchUserDetails("u.email", user_email);
+//        
+//        smeUserDetails = util.fetchSmeUserDetails(data);
+//        if (!smeUserDetails.isEmpty()) {
+//            type = smeUserDetails.getString("type");
+//        } else {
+//            type = "";
+//        }
         
         String start = data.getString("start");
         
@@ -125,36 +129,42 @@ public class SMETransactions extends AbstractVerticle {
                     
                 }
             }
-
-//        String[] openingBalanceSplit = openingBalance.split("\\s+");
-//        String[] closingBalanceSplit = closingBalance.split("\\s+");
-            JsonArray debits = new JsonArray();
-            if (type.trim().equalsIgnoreCase("institution staff")) {
-                
-                JsonObject jsonObject = null;
-                for (Object obj : stmnt) {
-                    jsonObject = (JsonObject) obj;
-                    
-                    if (jsonObject.getString("sign").trim().equalsIgnoreCase("+")) {
-                        debits.add(jsonObject);
-                        
-                    }
-                }
-            }
-            if (type.equalsIgnoreCase("institution staff")) {
-                response
-                        .put("transactions", debits)
-                        .put("opening_balance", fullOpeningBal)
-                        .put("closing_balance", fullClosingBal);
-                
-                message.reply(response);
-            } else {
-                response
+            
+            response
                         .put("transactions", stmnt)
                         .put("opening_balance", fullOpeningBal)
                         .put("closing_balance", fullClosingBal);
                 message.reply(response);
-            }
+
+//        String[] openingBalanceSplit = openingBalance.split("\\s+");
+//        String[] closingBalanceSplit = closingBalance.split("\\s+");
+//            JsonArray debits = new JsonArray();
+//            if (type.trim().equalsIgnoreCase("institution staff")) {
+//                
+//                JsonObject jsonObject = null;
+//                for (Object obj : stmnt) {
+//                    jsonObject = (JsonObject) obj;
+//                    
+//                    if (jsonObject.getString("sign").trim().equalsIgnoreCase("+")) {
+//                        debits.add(jsonObject);
+//                        
+//                    }
+//                }
+//            }
+//            if (type.equalsIgnoreCase("institution staff")) {
+//                response
+//                        .put("transactions", debits)
+//                        .put("opening_balance", fullOpeningBal)
+//                        .put("closing_balance", fullClosingBal);
+//                
+//                message.reply(response);
+//            } else {
+//                response
+//                        .put("transactions", stmnt)
+//                        .put("opening_balance", fullOpeningBal)
+//                        .put("closing_balance", fullClosingBal);
+//                message.reply(response);
+//            }
             
         }
         

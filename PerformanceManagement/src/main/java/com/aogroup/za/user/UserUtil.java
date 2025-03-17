@@ -172,9 +172,9 @@ public class UserUtil {
                 
             String emailBody = "Dear " + firstName.toUpperCase() + " " + lastName.toUpperCase()
                     + ".  You have been registered to use "+ ProjectConstants.COMPANY_NAME +" as a " + roleDetails.getString("description") +
-                    " Your password is " + password
-                    + " Visit " + ProjectConstants.PORTAL_URL +" to login to the system"
-                    + "  Thank you";
+                    " Your password is " + password ;
+//                    + " Visit " + ProjectConstants.PORTAL_URL +" to login to the system"
+//                    + "  Thank you";
 
             request
                     .put("emailRecipient", email)
@@ -1113,9 +1113,10 @@ public class UserUtil {
                     .put("responseCode", SUCCESS_CODE)
                     .put("responseDescription", "Success! Password changed");
 
-            String emailBody = "Dear " + name.toUpperCase() + ", <br> your "+ ProjectConstants.COMPANY_NAME +" password has been reset to " + password +
-                    "<br> If you did not initiate a Forgot My Password action, then contact us immediately." +
-                    "Click <a href=\""+ProjectConstants.PORTAL_URL+"\" >here</a> to login <br> Thanks";
+            String emailBody = "Dear " + name.toUpperCase() + " your "+ ProjectConstants.COMPANY_NAME +" password has been reset to " + password +
+                    " If you did not initiate a Forgot My Password action, then contact us immediately." ;
+//                    "Click <a href=\""+ProjectConstants.PORTAL_URL+"\" >here</a> to login <br> Thanks";
+            
             
             String otpSMS = "Dear " + name.toUpperCase() + ", your "+ ProjectConstants.COMPANY_NAME +" password has been reset to " + password +
                     ". If you did not initiate a Forgot My Password action, then contact us immediately.";
@@ -1276,8 +1277,10 @@ public class UserUtil {
                             .put("responseCode", SUCCESS_CODE)
                             .put("responseDescription", "Success! Password changed");
 
-                    String emailBody = "Dear " + name.toUpperCase() + ", your "+ ProjectConstants.COMPANY_NAME +" password has been reset ." +
-                            "<br> If you did not change your password, Contact us immediately <br> Thanks";
+                    String emailBody = "Dear " + name.toUpperCase() + " your " + ProjectConstants.COMPANY_NAME +" password has been reset ." +
+                            " If you did not change your password, Contact us immediately. Thanks";
+                    
+
                     request
                             .put("emailRecipient", email)
                             .put("emailSubject", "PASSWORD RESET")

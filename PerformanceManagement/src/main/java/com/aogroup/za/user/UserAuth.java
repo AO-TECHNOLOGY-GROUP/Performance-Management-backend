@@ -52,13 +52,13 @@ public class UserAuth extends AbstractVerticle {
         eventBus.consumer("999000", this::userValidator);
     }
 
-
     private void userValidator(Message<JsonObject> message){
         JsonObject data = message.body();
         String token = data.getString("token").trim();
         String serviceCode = data.getString("serviceCode").trim();
-
-        byte[] tokenBytes =  Base64.getDecoder().decode(token.getBytes(StandardCharsets.UTF_8));
+        
+        try {
+            byte[] tokenBytes =  Base64.getDecoder().decode(token.getBytes(StandardCharsets.UTF_8));
         String uuid = new String(tokenBytes, StandardCharsets.UTF_8);
         //System.out.println("TOKEN UUID \t "+uuid);
 
@@ -169,23 +169,26 @@ public class UserAuth extends AbstractVerticle {
                         .put("responseCode", "999")
                         .put("responseDescription", "Error! Failed to process service "+sendToBus.result().address());
                 message.reply(data);
-//                message.fail(120,"Error! Failed to process service "+sendToBus.result().address());
             }
         });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        
 //        message.reply(quickResponse);
     }
-
-    private void registration(Message<JsonObject> message){
+    private void registration(Message<JsonObject> message) {
         JsonObject data = message.body();
 
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"create_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "create_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -194,7 +197,7 @@ public class UserAuth extends AbstractVerticle {
             return;
         }
 
-        data.put("user",user);
+        data.put("user", user);
 
         JsonObject quickResponse = new UserUtil().registerUser(data);
 
@@ -204,34 +207,34 @@ public class UserAuth extends AbstractVerticle {
                     .addHeader("emailSubject", quickResponse.getString("emailSubject"))
                     .addHeader("emailBody", quickResponse.getString("emailBody"));
 
-            eventBus.send("SEND_EMAIL", quickResponse,deliveryOptions);
+            eventBus.send("SEND_EMAIL", quickResponse, deliveryOptions);
             quickResponse.remove("emailRecipient");
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");
         }
-        
+
         if (quickResponse.containsKey("msg")) {
             JsonObject smsObject = new JsonObject();
             smsObject
                     .put("phonenumber", quickResponse.getString("phonenumber"))
                     .put("msg", quickResponse.getString("msg"));
-            
+
             eventBus.send("COMMUNICATION_ADAPTOR", smsObject);
         }
         message.reply(quickResponse);
     }
 
-    private void updateUser(Message<JsonObject> message){
+    private void updateUser(Message<JsonObject> message) {
         JsonObject data = message.body();
 
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"manage_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "manage_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -240,17 +243,17 @@ public class UserAuth extends AbstractVerticle {
             return;
         }
 
-        data.put("user",user);
+        data.put("user", user);
 
         JsonObject quickResponse = new UserUtil().updateUser(data);
         message.reply(quickResponse);
     }
 
-    private void login(Message<JsonObject> message){
+    private void login(Message<JsonObject> message) {
         JsonObject data = message.body();
         JsonObject quickResponse = new UserUtil().login(data);
         if (quickResponse.getString("responseCode").equals("000")) {
-            eventBus.send("COMMUNICATION_ADAPTOR",quickResponse);
+            eventBus.send("COMMUNICATION_ADAPTOR", quickResponse);
             quickResponse.remove("phonenumber");
             quickResponse.remove("msg");
 
@@ -259,7 +262,7 @@ public class UserAuth extends AbstractVerticle {
                     .addHeader("emailSubject", quickResponse.getString("emailSubject"))
                     .addHeader("emailBody", quickResponse.getString("emailBody"));
 
-            eventBus.send("SEND_EMAIL", quickResponse,deliveryOptions);
+            eventBus.send("SEND_EMAIL", quickResponse, deliveryOptions);
             quickResponse.remove("emailRecipient");
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");
@@ -267,18 +270,18 @@ public class UserAuth extends AbstractVerticle {
         message.reply(quickResponse);
     }
 
-    private void otpVerification(Message<JsonObject> message){
+    private void otpVerification(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
         String user_uuid = headers.get("user_uuid");
 
-        data.put("user_uuid",user_uuid);
+        data.put("user_uuid", user_uuid);
         JsonObject quickResponse = new UserUtil().otpVerification(data);
         quickResponse.put("userId", user);
         quickResponse.put("user_uuid", user_uuid);
@@ -286,34 +289,34 @@ public class UserAuth extends AbstractVerticle {
 
         eventBus.send("ACTIVITY_LOG",
                 new JsonObject()
-                .put("logName",message.address())
-                        .put("description","OTP Validation")
-                        .put("subject_type","Scope Branch")
-                        .put("subject_id","1")
-                        .put("description","OTP Validation")
-                        .put("user",user)
-                        .put("properties",data.getString("ip")));
+                        .put("logName", message.address())
+                        .put("description", "OTP Validation")
+                        .put("subject_type", "Scope Branch")
+                        .put("subject_id", "1")
+                        .put("description", "OTP Validation")
+                        .put("user", user)
+                        .put("properties", data.getString("ip")));
     }
-    
-    private void logout(Message<JsonObject> message){
+
+    private void logout(Message<JsonObject> message) {
         JsonObject data = message.body();
         JsonObject quickResponse = new UserUtil().logout(data);
         message.reply(quickResponse);
     }
 
-    private void forgotPassword(Message<JsonObject> message){
+    private void forgotPassword(Message<JsonObject> message) {
         JsonObject data = message.body();
         JsonObject quickResponse = new UserUtil().forgotPassword(data);
         if (quickResponse.getString("responseCode").equals("000")) {
-            eventBus.send("COMMUNICATION_ADAPTOR",quickResponse);
+            eventBus.send("COMMUNICATION_ADAPTOR", quickResponse);
             quickResponse.remove("phonenumber");
             quickResponse.remove("msg");
-            
+
             DeliveryOptions deliveryOptions = new DeliveryOptions()
                     .addHeader("emailRecipient", quickResponse.getString("emailRecipient"))
                     .addHeader("emailSubject", quickResponse.getString("emailSubject"))
                     .addHeader("emailBody", quickResponse.getString("emailBody"));
-            eventBus.send("SEND_EMAIL",quickResponse,deliveryOptions);
+            eventBus.send("SEND_EMAIL", quickResponse, deliveryOptions);
             quickResponse.remove("emailRecipient");
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");
@@ -321,24 +324,24 @@ public class UserAuth extends AbstractVerticle {
         message.reply(quickResponse);
     }
 
-    private void changePassword(Message<JsonObject> message){
+    private void changePassword(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
 
-        data.put("user",user);
+        data.put("user", user);
         JsonObject quickResponse = new UserUtil().changePassword(data);
         if (quickResponse.getString("responseCode").equals("000")) {
             DeliveryOptions deliveryOptions = new DeliveryOptions()
                     .addHeader("emailRecipient", quickResponse.getString("emailRecipient"))
                     .addHeader("emailSubject", quickResponse.getString("emailSubject"))
                     .addHeader("emailBody", quickResponse.getString("emailBody"));
-            eventBus.send("SEND_EMAIL",quickResponse,deliveryOptions);
+            eventBus.send("SEND_EMAIL", quickResponse, deliveryOptions);
             quickResponse.remove("emailRecipient");
             quickResponse.remove("emailSubject");
             quickResponse.remove("emailBody");
@@ -346,16 +349,16 @@ public class UserAuth extends AbstractVerticle {
         message.reply(quickResponse);
     }
 
-    private void activateUser(Message<JsonObject> message){
+    private void activateUser(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"manage_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "manage_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -372,16 +375,16 @@ public class UserAuth extends AbstractVerticle {
         message.reply(quickResponse);
     }
 
-    private void deactivateUser(Message<JsonObject> message){
+    private void deactivateUser(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"manage_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "manage_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -398,17 +401,17 @@ public class UserAuth extends AbstractVerticle {
         message.reply(quickResponse);
     }
 
-    private void fetchUsers(Message<JsonObject> message){
+    private void fetchUsers(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
         String user_branches = headers.get("user_branches");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -431,8 +434,7 @@ public class UserAuth extends AbstractVerticle {
 //        }
 //        data.put("data",array);
         // message.reply(data);
-
-        JsonObject result = new UserUtil().fetchUsers("1","1");
+        JsonObject result = new UserUtil().fetchUsers("1", "1");
         if (result.getJsonArray("data").size() == 0) {
             result
                     .put("responseCode", "999")
@@ -445,17 +447,17 @@ public class UserAuth extends AbstractVerticle {
         message.reply(result);
     }
 
-    private void fetchRelationshipOfficers(Message<JsonObject> message){
+    private void fetchRelationshipOfficers(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
         String user_branches = headers.get("user_branches");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -465,8 +467,8 @@ public class UserAuth extends AbstractVerticle {
         }
 
         data.clear();
-        JsonArray array = new UserUtil().fetchUsersWithUsersBranchesTable("ub.BranchId IN ("+user_branches+") AND isRO","1");
-        data.put("data",array);
+        JsonArray array = new UserUtil().fetchUsersWithUsersBranchesTable("ub.BranchId IN (" + user_branches + ") AND isRO", "1");
+        data.put("data", array);
         if (array.size() == 0) {
             data
                     .put("responseCode", "999")
@@ -479,7 +481,7 @@ public class UserAuth extends AbstractVerticle {
         message.reply(data);
     }
 
-    private void updateRelationshipOfficerPortfolio(Message<JsonObject> message){
+    private void updateRelationshipOfficerPortfolio(Message<JsonObject> message) {
         JsonObject data = message.body();
         String current_relationship_officer = data.getString("current_relationship_officer");
         String new_relationship_officer = data.getString("new_relationship_officer");
@@ -494,12 +496,12 @@ public class UserAuth extends AbstractVerticle {
         String user = headers.get("user");
         String user_branch_id = headers.get("user_branch_id");
 
-        String[] fields = {"current_relationship_officer","new_relationship_officer"};
-        for (String field: fields) {
+        String[] fields = {"current_relationship_officer", "new_relationship_officer"};
+        for (String field : fields) {
             if (!data.containsKey(field) || data.getString(field) == null) {
                 data
                         .put("responseCode", "999")
-                        .put("responseDescription", "Error! Field "+field+" is invalid");
+                        .put("responseDescription", "Error! Field " + field + " is invalid");
             }
         }
 
@@ -509,7 +511,7 @@ public class UserAuth extends AbstractVerticle {
                     .put("responseDescription", "Error! Field customers is invalid");
         }
 
-        JsonObject currentRO = new UserUtil().fetchUserDetails("uuid",current_relationship_officer);
+        JsonObject currentRO = new UserUtil().fetchUserDetails("uuid", current_relationship_officer);
         if (!currentRO.getBoolean("successIndicator")) {
             data
                     .put("responseCode", "999")
@@ -517,9 +519,9 @@ public class UserAuth extends AbstractVerticle {
             message.reply(data);
             return;
         }
-        String currentROName = currentRO.getString("firstName")+" "+currentRO.getString("lastName");
+        String currentROName = currentRO.getString("firstName") + " " + currentRO.getString("lastName");
 
-        JsonObject newRO = new UserUtil().fetchUserDetails("uuid",new_relationship_officer);
+        JsonObject newRO = new UserUtil().fetchUserDetails("uuid", new_relationship_officer);
         if (!newRO.getBoolean("successIndicator")) {
             data
                     .put("responseCode", "999")
@@ -528,7 +530,7 @@ public class UserAuth extends AbstractVerticle {
             return;
         }
 
-        String newROName = newRO.getString("firstName")+" "+newRO.getString("lastName");
+        String newROName = newRO.getString("firstName") + " " + newRO.getString("lastName");
 
         JsonObject payload = new JsonObject()
                 .put("current_relationship_officer", current_relationship_officer)
@@ -539,11 +541,11 @@ public class UserAuth extends AbstractVerticle {
 //                .put("customersDetails", new CustomerUtil().fetchCustomersFromJsonArray("c.id",customers));
 
         JsonObject mkchkr = new JsonObject()
-                .put("serviceCode","916500")
-                .put("module","UPDATE_PORTFOLIO")
-                .put("payload",payload.toString())
-                .put("user",user)
-                .put("branch",user_branch_id);
+                .put("serviceCode", "916500")
+                .put("module", "UPDATE_PORTFOLIO")
+                .put("payload", payload.toString())
+                .put("user", user)
+                .put("branch", user_branch_id);
 
 //        data.clear();
         if (new MakerCheckerUtil().createMakerChecker(mkchkr)) {
@@ -559,15 +561,15 @@ public class UserAuth extends AbstractVerticle {
         message.reply(data);
     }
 
-    private void approveUpdateRelationshipOfficerPortfolio(Message<JsonObject> message){
+    private void approveUpdateRelationshipOfficerPortfolio(Message<JsonObject> message) {
         JsonObject data = message.body();
         logger.applicationLog(logger.logPreString() + "Error - " + data + "\n\n", "", 6);
 //        String approval_id = data.getString("approval_id");
 //        //System.out.println("XXX "+data);
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
@@ -579,23 +581,23 @@ public class UserAuth extends AbstractVerticle {
                 .put("responseCode", "000")
                 .put("responseDescription", "Service is being processed.");
         message.reply(response);
-        
+
         JsonObject quickResponse = new UserUtil().changeRelationshipOfficerPortfolio(data);
 //        message.reply(data);
     }
 
-    private void fetchUser(Message<JsonObject> message){
+    private void fetchUser(Message<JsonObject> message) {
         JsonObject data = message.body();
         String user_email = data.getString("email");
 
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -620,16 +622,16 @@ public class UserAuth extends AbstractVerticle {
         message.reply(userDetails);
     }
 
-    private void fetchRoles(Message<JsonObject> message){
+    private void fetchRoles(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_roles");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_roles");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -639,7 +641,7 @@ public class UserAuth extends AbstractVerticle {
         }
 
         JsonObject response = new UserUtil().fetchRoles();
-        if (response.getJsonArray("data").size() > 0 ) {
+        if (response.getJsonArray("data").size() > 0) {
             response
                     .put("responseCode", "000")
                     .put("responseDescription", "Success");
@@ -651,16 +653,16 @@ public class UserAuth extends AbstractVerticle {
         message.reply(response);
     }
 
-    private void fetchPermissions(Message<JsonObject> message){
+    private void fetchPermissions(Message<JsonObject> message) {
         JsonObject data = message.body();
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_permissions");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_permissions");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -670,7 +672,7 @@ public class UserAuth extends AbstractVerticle {
         }
 
         JsonObject response = new UserUtil().fetchPermissions();
-        if (response.getJsonArray("data").size() > 0 ) {
+        if (response.getJsonArray("data").size() > 0) {
             response
                     .put("responseCode", "000")
                     .put("responseDescription", "Success");
@@ -682,18 +684,18 @@ public class UserAuth extends AbstractVerticle {
         message.reply(response);
     }
 
-    private void fetchRolePermissions(Message<JsonObject> message){
+    private void fetchRolePermissions(Message<JsonObject> message) {
         JsonObject data = message.body();
         String role_id = data.getString("identifier");
 
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_roles");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_roles");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -702,8 +704,8 @@ public class UserAuth extends AbstractVerticle {
             return;
         }
 
-        JsonObject response = new UserUtil().fetchRolePermissions("rp.[role_id]",role_id);
-        if (response.getJsonArray("data").size() > 0 ) {
+        JsonObject response = new UserUtil().fetchRolePermissions("rp.[role_id]", role_id);
+        if (response.getJsonArray("data").size() > 0) {
             response
                     .put("responseCode", "000")
                     .put("responseDescription", "Success");
@@ -715,17 +717,17 @@ public class UserAuth extends AbstractVerticle {
         message.reply(response);
     }
 
-    private void createRoleAndItsPermissions(Message<JsonObject> message){
+    private void createRoleAndItsPermissions(Message<JsonObject> message) {
         JsonObject data = message.body();
 
         MultiMap headers = message.headers();
-        if (headers.isEmpty()){
+        if (headers.isEmpty()) {
             //System.out.println("empty Header");
-            message.fail(666,"Unauthenticated User");
+            message.fail(666, "Unauthenticated User");
             return;
         }
         String user = headers.get("user");
-        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id",user,"view_users");
+        boolean hasPermission = new UserUtil().checkUserHasPermission("u.id", user, "view_users");
         if (!hasPermission) {
             data
                     .put("responseCode", "999")
@@ -738,7 +740,7 @@ public class UserAuth extends AbstractVerticle {
         message.reply(response);
     }
 
-    private void updateRolePermissions(Message<JsonObject> message){
+    private void updateRolePermissions(Message<JsonObject> message) {
         JsonObject data = message.body();
 
         JsonObject response = new UserUtil().updateRolePermissions(data);

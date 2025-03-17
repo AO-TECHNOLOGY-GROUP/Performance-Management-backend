@@ -2,6 +2,7 @@ package com.aogroup.za.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
@@ -20,6 +21,23 @@ public class Common {
     public static String T24_PORT = null;
     
     
+    public String generateRandomPassword(int len) {
+        // ASCII range – alphanumeric (0-9, a-z, A-Z)
+        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+
+        // each iteration of the loop randomly chooses a character from the given
+        // ASCII range and appends it to the `StringBuilder` instance
+        for (int i = 0; i < len; i++) {
+            int randomIndex = random.nextInt(chars.length());
+            sb.append(chars.charAt(randomIndex));
+        }
+
+        return sb.toString();
+    }
+
     public static String generateRandom(int length) {
         Random random = new Random();
         char[] digits = new char[length];
@@ -67,8 +85,6 @@ public class Common {
         }
         return newDate;
     }
-
-
 
     public String generateNewPinRandomFour() {
         String generatedStr = null;

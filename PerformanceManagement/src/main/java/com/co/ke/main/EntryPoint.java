@@ -1,6 +1,5 @@
 package com.co.ke.main;
 
-
 import com.aogroup.za.CalenderofEvents.events;
 import com.aogroup.za.Channels.channels;
 import com.aogroup.za.Checklist.checklists;
@@ -12,6 +11,7 @@ import com.aogroup.za.UserInteraction.UserInteraction;
 import com.aogroup.za.Objectives.objectives;
 import com.aogroup.za.Subtasks.subtasks;
 import com.aogroup.za.Transactions.SMETransactions;
+import com.aogroup.za.adaptors.CustomerDetailsAdaptor;
 import com.aogroup.za.adaptors.ESBRouter;
 import com.aogroup.za.adaptors.EmailAdaptor;
 import com.aogroup.za.adaptors.Integrator;
@@ -34,17 +34,17 @@ import io.vertx.core.net.PemKeyCertOptions;
 import java.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import timertasks.ConfirmDeposits;
 import timertasks.EventReminderDayBefore;
 import timertasks.EventReminderThatDay;
 //import timetasks.ConfirmDeposits;
-
 
 /**
  *
  * @author nathan
  */
 public class EntryPoint extends AbstractVerticle {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(EntryPoint.class);
 
     public static Prop props;
@@ -65,28 +65,25 @@ public class EntryPoint extends AbstractVerticle {
     public static String SMTP_PORT;
     public static String SMTP_EMAIL;
     public static String SMTP_PASSWORD;
-    
-    
+
     public static String T24_IP;
     public static String T24_PORT;
     public static String COMPANY_NAME;
     public static String COMPANY_PASSWORD;
     public static String COMPANY_USERNAME;
-  
-    
+
     public static String MOCASH_DATABASE_IP;
     public static String MOCASH_DATABASE_NAME;
     public static String MOCASH_DATABASE_USER;
     public static String MOCASH_DATABASE_PASSWORD;
     public static String ENCRYPTED_SMS_ENDPOINT;
-    
+
     public static String AGENCY_DATABASE_NAME;
     public static String AGENCY_DATABASE_USER;
     public static String AGENCY_DATABASE_PASSWORD;
     public static String AGENCY_DATABASE_PORT;
     public static String AGENCY_DATABASE_IP;
 
-    
     // Hikari Setup
     static int MAX_POOL_SIZE = 3;
     static int MAX_IDLE_TIME = 4;
@@ -113,17 +110,15 @@ public class EntryPoint extends AbstractVerticle {
         SMTP_PORT = "";
         SMTP_PASSWORD = "";
         SMTP_EMAIL = "";
-        
-        
+
         T24_IP = "";
         T24_PORT = "";
         COMPANY_NAME = "";
         COMPANY_PASSWORD = "";
         COMPANY_USERNAME = "";
-        
-      
+
         ENCRYPTED_SMS_ENDPOINT = "";
-        
+
         AGENCY_DATABASE_NAME = "";
         AGENCY_DATABASE_USER = "";
         AGENCY_DATABASE_PASSWORD = "";
@@ -155,7 +150,6 @@ public class EntryPoint extends AbstractVerticle {
         SMTP_EMAIL = props.getEMAIL_SENDER();
         SMTP_PASSWORD = props.getEMAIL_PASSWORD();
 
-        
         T24_IP = props.getT24_IP();
         T24_PORT = props.getT24_PORT();
         COMPANY_NAME = props.getCOMPANY_NAME();
@@ -168,17 +162,15 @@ public class EntryPoint extends AbstractVerticle {
         AGENCY_DATABASE_PASSWORD = props.getAGENCY_DATABASE_PASSWORD();
         AGENCY_DATABASE_PORT = props.getAGENCY_DATABASE_PORT();
         AGENCY_DATABASE_IP = props.getAGENCY_DATABASE_IP();
-;
+        ;
 
-    
-    
         // Deployment options
         DeploymentOptions options = new DeploymentOptions()
                 .setInstances(10)
                 .setWorker(true)
                 .setWorkerPoolSize(40)
                 .setHa(true);
-      
+
         // deploy Vertices Here 
         vertx.deployVerticle(EntryPoint.class.getName(), options);
         vertx.deployVerticle(employeeTasks.class.getName(), options);
@@ -197,24 +189,23 @@ public class EntryPoint extends AbstractVerticle {
         vertx.deployVerticle(checklists.class.getName(), options);
         vertx.deployVerticle(loanPipeline.class.getName(), options);
         vertx.deployVerticle(events.class.getName(), options);
+        vertx.deployVerticle(CustomerDetailsAdaptor.class.getName(),options);
 //        vertx.deployVerticle(fetchbalance.class.getName(), options);
 
-//        ConfirmDeposits diodays = new ConfirmDeposits (vertx);
-//        Timer diodaysSched = new Timer();
-//        diodaysSched.schedule(diodays, 0, 24 * 60 * 60 * 1000); // Runs every 24 hours
+        ConfirmDeposits diodays = new ConfirmDeposits (vertx);
+        Timer diodaysSched = new Timer();
+        diodaysSched.schedule(diodays, 15000, 24 * 60 * 60 * 1000); // Runs every 24 hours
 //          }
-
-        EventReminderDayBefore erdb = new EventReminderDayBefore (vertx);
+        EventReminderDayBefore erdb = new EventReminderDayBefore(vertx);
         Timer erdbSched = new Timer();
-        erdbSched.schedule(erdb,  30000, 10 * 60 * 1000);
+        erdbSched.schedule(erdb, 30000, 10 * 60 * 1000);
 
-        
-        EventReminderThatDay ert = new EventReminderThatDay (vertx);
+        EventReminderThatDay ert = new EventReminderThatDay(vertx);
         Timer ertSched = new Timer();
         ertSched.schedule(ert, 40000, 10 * 60 * 1000);
-        
+
     }
-    
+
     @Override
     public void start(Future<Void> start_application) {
 
@@ -242,12 +233,16 @@ public class EntryPoint extends AbstractVerticle {
                 JsonObject responseOBJ = new JsonObject();
                 if ("POST".equalsIgnoreCase(method)) {
                     JsonObject data = new JsonObject(body);
+                    JsonObject log = new JsonObject(body);
                     data
-                            .put("ip",ip)
-                            .put("ip_address",ip);
+                            .put("ip", ip)
+                            .put("ip_address", ip);
 
-
-                    logger.applicationLog(logger.logPreString() + "Channel Request  - " + data + "\n\n", "", 2);
+                    String[] sensitiveFields = {"username", "password", "otp", "user_password"};
+                    for (String field : sensitiveFields) {
+                        log.remove(field);
+                    }
+                    logger.applicationLog(logger.logPreString() + "Channel Request  - " + log + "\n\n", "", 2);
                     if (path.endsWith("/performance/req")) {
                         try {
                             DeliveryOptions deliveryOptions = new DeliveryOptions()
@@ -273,7 +268,7 @@ public class EntryPoint extends AbstractVerticle {
                                                         .put("error_data", sToBus.cause().getLocalizedMessage());
                                                 logger.applicationLog(logger.logPreString() + "Response to channel - " + responseOBJ + "\n\n", "", 5);
                                                 response.end(responseOBJ.toString());
-                                                
+
                                             }
                                         });
 
@@ -299,7 +294,7 @@ public class EntryPoint extends AbstractVerticle {
                                     .put("responseDescription", ex.getLocalizedMessage());
                             response.end(responseOBJ.toString());
                         }
-                       } else {
+                    } else {
                         // Unknown path
                         responseOBJ.put("responseCode", "404")
                                 .put("responseDescription", "Invalid path");
